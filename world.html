@@ -1747,34 +1747,38 @@
         // ============================================
         // Cooldown to prevent interaction spam
         let lastInteractionTime = 0;
+        let nextInteractionAllowed = Date.now() + 60000; // First event after 60s
 
         function checkCharacterInteractions(chars) {
             const now = Date.now();
-            // Only check interactions every 30 seconds minimum
-            if (now - lastInteractionTime < 30000) {
-                // Still update timers for active interactions
-                chars.forEach(char => {
-                    if (char.interacting && char.interactionTimer > 0) {
-                        char.interactionTimer -= 16;
-                        if (char.interactionTimer <= 0) {
-                            char.interacting = false;
-                        }
-                    }
-                });
-                return;
-            }
 
-            for (let i = 0; i < chars.length; i++) {
-                for (let j = i + 1; j < chars.length; j++) {
+            // Update active interaction timers always
+            chars.forEach(char => {
+                if (char.interacting && char.interactionTimer > 0) {
+                    char.interactionTimer -= 16;
+                    if (char.interactionTimer <= 0) {
+                        char.interacting = false;
+                    }
+                }
+            });
+
+            // Hard cooldown: minimum 60 seconds between events
+            if (now < nextInteractionAllowed) return;
+
+            // Check if any pair is close enough
+            let triggered = false;
+            for (let i = 0; i < chars.length && !triggered; i++) {
+                for (let j = i + 1; j < chars.length && !triggered; j++) {
                     const char1 = chars[i];
                     const char2 = chars[j];
                     const dx = char1.x - char2.x;
                     const dy = char1.y - char2.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
 
-                    if (dist < 80 && !char1.interacting && !char2.interacting && !char1.celebrating && !char2.celebrating && Math.random() < 0.08) {
-                        // 8% chance, plus 30s cooldown = very rare events
-                        lastInteractionTime = now;
+                    if (dist < 80 && !char1.interacting && !char2.interacting && !char1.celebrating && !char2.celebrating) {
+                        // Set next allowed time: 60-90 seconds from now
+                        nextInteractionAllowed = now + 60000 + Math.random() * 30000;
+                        triggered = true;
 
                         const allEvents = [
                             { name: 'まいだ！まいだ！', emoji: '🏮', isMikoshi: true },
