@@ -2388,6 +2388,83 @@
         // renderStaticMap();
 
         // ============================================
+        // 投票所の建物描画
+        // ============================================
+        function drawVotingStations(ctx, now) {
+            const votingStations = landmarks.filter(lm => lm.type === 'vote');
+            votingStations.forEach((station, idx) => {
+                const x = station.x;
+                const y = station.y;
+                const w = 50;
+                const h = 40;
+                const seed = idx * 123;
+                const bob = Math.sin(now * 0.002 + idx) * 1.5; // gentle float
+
+                ctx.save();
+
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                ctx.beginPath();
+                ctx.ellipse(x + w/2, y + h + 4, w/2 + 2, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Building body (white/cream)
+                ctx.fillStyle = '#f8f0e8';
+                ctx.fillRect(x, y + bob, w, h);
+                ctx.strokeStyle = '#b09070';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(x, y + bob, w, h);
+
+                // Red roof/header band (投票所らしさ)
+                ctx.fillStyle = '#cc3333';
+                ctx.fillRect(x, y + bob, w, h * 0.22);
+
+                // White "投票所" text on red band
+                ctx.font = 'bold 8px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText('投票所', x + w/2, y + bob + h * 0.17);
+
+                // Door
+                ctx.fillStyle = '#8b6e4e';
+                ctx.fillRect(x + w * 0.38, y + bob + h * 0.5, w * 0.24, h * 0.5);
+
+                // Ballot box icon
+                ctx.fillStyle = '#ddd';
+                ctx.fillRect(x + w * 0.15, y + bob + h * 0.35, w * 0.2, h * 0.25);
+                ctx.strokeStyle = '#888';
+                ctx.lineWidth = 0.8;
+                ctx.strokeRect(x + w * 0.15, y + bob + h * 0.35, w * 0.2, h * 0.25);
+                // Slot on box
+                ctx.strokeStyle = '#555';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x + w * 0.18, y + bob + h * 0.35);
+                ctx.lineTo(x + w * 0.32, y + bob + h * 0.35);
+                ctx.stroke();
+
+                // 🗳️ emoji above
+                ctx.font = '16px sans-serif';
+                ctx.fillText('🗳️', x + w/2, y + bob - 6);
+
+                // Name label below
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                // White background for label
+                const labelW = ctx.measureText(station.name).width + 8;
+                ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                ctx.fillRect(x + w/2 - labelW/2, y + h + 6, labelW, 14);
+                ctx.strokeStyle = 'rgba(200,50,50,0.4)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x + w/2 - labelW/2, y + h + 6, labelW, 14);
+                ctx.fillStyle = '#cc3333';
+                ctx.fillText(station.name, x + w/2, y + h + 16);
+
+                ctx.restore();
+            });
+        }
+
+        // ============================================
         // VOTE-BASED TOWN EVOLUTION (大規模演出版)
         // ============================================
 
@@ -3904,6 +3981,9 @@
             if (mapImage && mapImage.complete) {
                 ctx.drawImage(mapImage, 0, 0, MAP_W, MAP_H);
             }
+
+            // Draw voting station buildings on the map
+            drawVotingStations(ctx, now);
 
             // Draw vote-based town evolution effects
             drawVoteEffects(ctx, now);
