@@ -806,6 +806,22 @@
             }
         }
     </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script>
+        firebase.initializeApp({
+            apiKey: "AIzaSyCitq3ZmZ2lbF_mPSermXvbEE77X0jJW2o",
+            authDomain: "meisui-world.firebaseapp.com",
+            databaseURL: "https://meisui-world-default-rtdb.firebaseio.com",
+            projectId: "meisui-world",
+            storageBucket: "meisui-world.firebasestorage.app",
+            messagingSenderId: "966808863030",
+            appId: "1:966808863030:web:a1b85eb17974162c673397"
+        });
+        const firebaseDb = firebase.database();
+        const votesRef = firebaseDb.ref('votes');
+    </script>
 </head>
 <body>
     <!-- Welcome Screen -->
@@ -868,7 +884,7 @@
             style="font-size:14px;color:#fff;background:linear-gradient(135deg,#f7971e,#ffd200);border:2px solid #e8a000;padding:10px 20px;border-radius:12px;cursor:pointer;font-family:'Hiragino Sans',sans-serif;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
             🏆 街ランク
         </button>
-        <button onclick="if(confirm('全キャラクターの投票を0票に戻しますか？\n（街並みも初期状態に戻ります）')){votes={meisui:0,meisui_chan:0,tsutsuji:0,bekabune:0,asari:0,ryoushi:0};totalVotes=0;localStorage.setItem('meisui_votes',JSON.stringify(votes));updateVoteDisplay();updateBarGraph();}"
+        <button onclick="if(confirm('全キャラクターの投票を0票に戻しますか？\n（街並みも初期状態に戻ります）')){votesRef.set({meisui:0,meisui_chan:0,tsutsuji:0,bekabune:0,asari:0,ryoushi:0});}"
             style="font-size:14px;color:#fff;background:linear-gradient(135deg,#666,#444);border:2px solid #888;padding:10px 20px;border-radius:12px;cursor:pointer;font-family:'Hiragino Sans',sans-serif;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
             🔄 0票に戻す
         </button>
@@ -3409,21 +3425,24 @@
         // VOTING SYSTEM
         // ============================================
 
-        // Vote storage (use localStorage so votes persist across page refreshes)
-        let votes = JSON.parse(localStorage.getItem('meisui_votes') || '{}'
-        );
-        if (!votes.meisui) {
+        // Vote storage (Firebase Realtime Database sync)
+        let votes = { meisui: 0, meisui_chan: 0, tsutsuji: 0, bekabune: 0, asari: 0, ryoushi: 0 };
+        let totalVotes = 0;
+
+        // Listen for real-time vote updates from Firebase
+        votesRef.on('value', (snapshot) => {
+            const data = snapshot.val() || {};
             votes = {
-                meisui: 0,
-                meisui_chan: 0,
-                tsutsuji: 0,
-                bekabune: 0,
-                asari: 0,
-                ryoushi: 0
+                meisui: data.meisui || 0,
+                meisui_chan: data.meisui_chan || 0,
+                tsutsuji: data.tsutsuji || 0,
+                bekabune: data.bekabune || 0,
+                asari: data.asari || 0,
+                ryoushi: data.ryoushi || 0
             };
-            localStorage.setItem('meisui_votes', JSON.stringify(votes));
-        }
-        let totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
+            totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
+            updateVoteDisplay();
+        });
 
         // Character metadata for voting modal
         const charMetadata = {
@@ -3461,7 +3480,8 @@
 
             votes[charType]++;
             totalVotes++;
-            localStorage.setItem('meisui_votes', JSON.stringify(votes));
+            // Sync to Firebase using transaction for atomic increment
+            votesRef.child(charType).transaction(current => (current || 0) + 1);
 
             // Update UI
             updateVoteDisplay();
