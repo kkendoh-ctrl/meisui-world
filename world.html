@@ -1745,7 +1745,25 @@
         // ============================================
         // Character Interaction System
         // ============================================
+        // Cooldown to prevent interaction spam
+        let lastInteractionTime = 0;
+
         function checkCharacterInteractions(chars) {
+            const now = Date.now();
+            // Only check interactions every 30 seconds minimum
+            if (now - lastInteractionTime < 30000) {
+                // Still update timers for active interactions
+                chars.forEach(char => {
+                    if (char.interacting && char.interactionTimer > 0) {
+                        char.interactionTimer -= 16;
+                        if (char.interactionTimer <= 0) {
+                            char.interacting = false;
+                        }
+                    }
+                });
+                return;
+            }
+
             for (let i = 0; i < chars.length; i++) {
                 for (let j = i + 1; j < chars.length; j++) {
                     const char1 = chars[i];
@@ -1754,32 +1772,19 @@
                     const dy = char1.y - char2.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
 
-                    if (dist < 80 && !char1.interacting && !char2.interacting && !char1.celebrating && !char2.celebrating && Math.random() < 0.15) {
-                        char1.interacting = true;
-                        char2.interacting = true;
-                        char1.interactionTimer = 4000;
-                        char2.interactionTimer = 4000;
-                        char1.state = 'idle';
-                        char2.state = 'idle';
-                        char1.stateTimer = 0;
-                        char2.stateTimer = 0;
+                    if (dist < 80 && !char1.interacting && !char2.interacting && !char1.celebrating && !char2.celebrating && Math.random() < 0.08) {
+                        // 8% chance, plus 30s cooldown = very rare events
+                        lastInteractionTime = now;
 
-                        // Set mikoshi dialogue
-                        char1.currentThought = 'まいだ！まいだ！🏮';
-                        char2.currentThought = 'まいだ！まいだ！🏮';
-
-                        // Create mikoshi event overlay
-                        showMikoshiEvent(char1, char2);
-                    }
-                    else if (dist < 80 && !char1.interacting && !char2.interacting && !char1.celebrating && !char2.celebrating && Math.random() < 0.3) {
-                        // 30% chance of a different interaction event (from remaining 85%)
-                        const events = [
-                            { thought1: 'じゃんけん ぽん！✊', thought2: 'じゃんけん ぽん！✌️', name: 'じゃんけん大会', emoji: '✊✌️✋' },
-                            { thought1: 'ハイタッチ！🙌', thought2: 'イェーイ！🙌', name: 'ハイタッチ', emoji: '🙌' },
-                            { thought1: '一緒に踊ろう！💃', thought2: 'レッツダンス！🕺', name: '浦安盆踊り', emoji: '💃🕺' },
-                            { thought1: '写真撮ろう！📸', thought2: 'はいチーズ！📸', name: '記念撮影', emoji: '📸' },
+                        const allEvents = [
+                            { name: 'まいだ！まいだ！', emoji: '🏮', isMikoshi: true },
+                            { name: 'じゃんけん大会', emoji: '✊✌️✋' },
+                            { name: 'ハイタッチ', emoji: '🙌' },
+                            { name: '浦安盆踊り', emoji: '💃🕺' },
+                            { name: '記念撮影', emoji: '📸' },
                         ];
-                        const event = events[Math.floor(Math.random() * events.length)];
+                        const event = allEvents[Math.floor(Math.random() * allEvents.length)];
+
                         char1.interacting = true;
                         char2.interacting = true;
                         char1.interactionTimer = 3000;
@@ -1788,12 +1793,15 @@
                         char2.state = 'idle';
                         char1.stateTimer = 0;
                         char2.stateTimer = 0;
-                        char1.currentThought = event.thought1;
-                        char2.currentThought = event.thought2;
 
-                        // Show event overlay (simpler than mikoshi)
-                        showSimpleInteractionEvent(char1, char2, event);
+                        // Show event overlay only (no thought bubbles)
+                        if (event.isMikoshi) {
+                            showMikoshiEvent(char1, char2);
+                        } else {
+                            showSimpleInteractionEvent(char1, char2, event);
+                        }
                         playSound('event');
+                        break; // Only one event per check
                     }
                 }
             }
@@ -1803,7 +1811,6 @@
                     char.interactionTimer -= 16;
                     if (char.interactionTimer <= 0) {
                         char.interacting = false;
-                        char.currentThought = null;
                     }
                 }
             });
@@ -3724,7 +3731,8 @@
             ctx.fillText(char.name, char.x, char.y + h / 2 + 10);
 
             // Thought bubble when idle
-            if (char.state === 'idle' && char.currentThought) {
+            // Thought bubbles disabled (too noisy)
+            if (false && char.state === 'idle' && char.currentThought) {
                 drawThoughtBubble(ctx, char.x, char.y - h / 2 - 45, char.currentThought);
             }
         }
