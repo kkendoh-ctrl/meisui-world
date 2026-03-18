@@ -999,7 +999,7 @@
             style="font-size:14px;color:#fff;background:linear-gradient(135deg,#f7971e,#ffd200);border:2px solid #e8a000;padding:10px 20px;border-radius:12px;cursor:pointer;font-family:'Hiragino Sans',sans-serif;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
             🏆 街ランク
         </button>
-        <button onclick="if(confirm('全キャラクターの投票を0票に戻しますか？\n（街並みも初期状態に戻ります）')){votesRef.set({meisui:0,meisui_chan:0,tsutsuji:0,bekabune:0,asari:0,ryoushi:0});}"
+        <button onclick="if(confirm('⚠️ 本当に全投票を0に戻しますか？\\nこの操作は取り消せません。\\n\\nスタッフ以外は押さないでください。')){votesRef.set({meisui:0,meisui_chan:0,tsutsuji:0,bekabune:0,asari:0,ryoushi:0});}"
             style="font-size:14px;color:#fff;background:linear-gradient(135deg,#666,#444);border:2px solid #888;padding:10px 20px;border-radius:12px;cursor:pointer;font-family:'Hiragino Sans',sans-serif;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
             🔄 0票に戻す
         </button>
@@ -1012,7 +1012,7 @@
         <button onclick="zoomReset()" style="width:50px;height:50px;border-radius:50%;border:2px solid #2d5016;background:rgba(255,255,255,0.95);font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;font-weight:bold;color:#2d5016;">🔍</button>
     </div>
 
-    <button id="fullscreenBtn" onclick="document.documentElement.requestFullscreen().catch(()=>{})" style="position:fixed;top:10px;right:10px;width:40px;height:40px;border-radius:8px;border:2px solid #2d5016;background:rgba(255,255,255,0.95);font-size:20px;cursor:pointer;z-index:250;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.2);">⛶</button>
+    <button id="fullscreenBtn" onclick="if(document.fullscreenElement){document.exitFullscreen()}else{document.documentElement.requestFullscreen().catch(()=>{})}" style="position:fixed;top:10px;right:10px;padding:6px 12px;border-radius:8px;border:2px solid #2d5016;background:rgba(255,255,255,0.95);font-size:12px;font-weight:bold;cursor:pointer;z-index:250;box-shadow:0 2px 8px rgba(0,0,0,0.2);color:#2d5016;font-family:sans-serif;">全画面</button>
 
     <!-- 街ランクポップアップ -->
     <div id="rankPopup" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:500;align-items:center;justify-content:center;">
@@ -2292,6 +2292,9 @@
         let voteParticles = [];
 
         function drawVoteEffects(ctx, now) {
+            const COASTLINE_Y = 780; // South coastline on the actual Urayasu map
+            const WATER_START_Y = 800; // Where water begins
+
             const vM = votes.meisui || 0;
             const vT = votes.tsutsuji || 0;
             const vV = votes.meisui_chan || 0;
@@ -2303,7 +2306,7 @@
             if (vM > 0) {
                 // 地面に金色のグラデーションオーバーレイ（投票が増えるほど黄金色に）
                 const intensity = Math.min(vM / 15, 1);
-                ctx.fillStyle = 'rgba(255, 215, 0, ' + (intensity * 0.12) + ')';
+                ctx.fillStyle = 'rgba(255, 215, 0, ' + (intensity * 0.05) + ')';
                 ctx.fillRect(100, 0, MAP_W - 100, MAP_H - 200);
 
                 // 大きなイチョウの木
@@ -2342,7 +2345,7 @@
             if (vT > 0) {
                 // ピンクの花びらオーバーレイ
                 const intensity = Math.min(vT / 15, 1);
-                ctx.fillStyle = 'rgba(255, 105, 180, ' + (intensity * 0.08) + ')';
+                ctx.fillStyle = 'rgba(255, 105, 180, ' + (intensity * 0.03) + ')';
                 ctx.fillRect(100, 0, MAP_W - 100, MAP_H - 200);
 
                 // 大きなツツジの花壇
@@ -2385,7 +2388,7 @@
 
                 // 海の色が美しく変化
                 const seaIntensity = Math.min(vV / 10, 1);
-                ctx.fillStyle = 'rgba(0, 200, 220, ' + (seaIntensity * 0.2) + ')';
+                ctx.fillStyle = 'rgba(0, 200, 220, ' + (seaIntensity * 0.08) + ')';
                 ctx.fillRect(0, MAP_H - 200, MAP_W, 200);
 
                 // ビーチ施設
@@ -2409,10 +2412,10 @@
             if (vU > 0) {
                 // 海がエメラルドグリーンに
                 const clarity = Math.min(vU / 12, 1);
-                ctx.fillStyle = 'rgba(0, 230, 180, ' + (clarity * 0.15) + ')';
+                ctx.fillStyle = 'rgba(0, 230, 180, ' + (clarity * 0.06) + ')';
                 ctx.fillRect(0, MAP_H - 200, MAP_W, 200);
                 // 河川もきれいに
-                ctx.fillStyle = 'rgba(0, 200, 220, ' + (clarity * 0.1) + ')';
+                ctx.fillStyle = 'rgba(0, 200, 220, ' + (clarity * 0.04) + ')';
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
                 for (let y = 0; y <= MAP_H; y += 15) {
@@ -3896,14 +3899,73 @@
         });
 
         function showCharacterPopup(px, py, char) {
-            const popup = document.getElementById('characterPopup');
-            document.getElementById('popupName').textContent = char.name;
-            document.getElementById('popupThought').textContent = char.currentThought || char.thoughts[0];
-            popup.classList.add('active');
-            popup.style.left = px + 'px';
-            popup.style.top = py + 'px';
+            // Remove existing popup
+            const existing = document.getElementById('charProfileCard');
+            if (existing) existing.remove();
 
-            setTimeout(() => popup.classList.remove('active'), 3000);
+            const meta = charMetadata[char.type] || {};
+            const voteCount = votes[char.type] || 0;
+            const cutinData = typeof cutinIdioms !== 'undefined' ? cutinIdioms[char.type] : null;
+
+            const policies = {
+                meisui: '環境・緑化',
+                tsutsuji: '子育て・教育',
+                meisui_chan: '観光・まちづくり',
+                bekabune: '環境保全・三番瀬',
+                asari: '文化・伝統継承',
+                ryoushi: '産業振興・商業'
+            };
+
+            const card = document.createElement('div');
+            card.id = 'charProfileCard';
+            card.style.cssText = `
+                position: fixed;
+                left: ${Math.min(px, window.innerWidth - 280)}px;
+                top: ${Math.min(py, window.innerHeight - 300)}px;
+                width: 260px;
+                background: white;
+                border-radius: 16px;
+                box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+                z-index: 350;
+                overflow: hidden;
+                animation: popScale 0.3s ease;
+                font-family: sans-serif;
+            `;
+
+            const headerColor = meta.color || '#2d5016';
+            card.innerHTML = `
+                <div style="background:${headerColor};padding:12px 16px;color:white;position:relative;">
+                    <div style="font-size:18px;font-weight:bold;">${char.name}</div>
+                    <div style="font-size:11px;opacity:0.9;margin-top:2px;">${policies[char.type] || ''}</div>
+                    <button onclick="document.getElementById('charProfileCard').remove()" style="position:absolute;top:8px;right:10px;background:none;border:none;color:white;font-size:18px;cursor:pointer;">✕</button>
+                </div>
+                <div style="padding:14px 16px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                        <div style="text-align:center;">
+                            <div style="font-size:24px;font-weight:bold;color:${headerColor};">${voteCount}</div>
+                            <div style="font-size:10px;color:#888;">得票数</div>
+                        </div>
+                        ${cutinData ? `<div style="text-align:center;">
+                            <div style="font-size:14px;font-weight:bold;color:${headerColor};">${cutinData.kanji}</div>
+                            <div style="font-size:9px;color:#888;">${cutinData.ruby}</div>
+                        </div>` : ''}
+                    </div>
+                    <div style="font-size:12px;color:#555;line-height:1.6;background:#f8f8f8;padding:8px 10px;border-radius:8px;">
+                        💬 ${char.currentThought || char.thoughts[0]}
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(card);
+
+            // Auto-close after 8 seconds
+            setTimeout(() => {
+                if (document.getElementById('charProfileCard')) {
+                    card.style.transition = 'opacity 0.3s';
+                    card.style.opacity = '0';
+                    setTimeout(() => card.remove(), 300);
+                }
+            }, 8000);
         }
 
         // (Facehame feature removed)
