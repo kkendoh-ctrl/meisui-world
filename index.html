@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ご当地めいすいくん総選挙</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 60px 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      max-width: 600px;
+    }
+
+    .title {
+      font-size: 2.8em;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #333;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 1.1em;
+      color: #666;
+      margin-bottom: 50px;
+      line-height: 1.6;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 20px;
+      flex-direction: column;
+    }
+
+    .btn {
+      padding: 20px 30px;
+      font-size: 1.2em;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+      color: white;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn:active {
+      transform: translateY(-1px);
+    }
+
+    .btn-vote {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .btn-display {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .icon {
+      font-size: 1.5em;
+      margin-right: 10px;
+    }
+
+    .footer {
+      margin-top: 40px;
+      padding-top: 30px;
+      border-top: 1px solid #ddd;
+      font-size: 0.9em;
+      color: #999;
+    }
+
+    .feature-list {
+      text-align: left;
+      margin: 40px 0;
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    .feature-item {
+      margin: 10px 0;
+      color: #666;
+      display: flex;
+      align-items: center;
+    }
+
+    .feature-item:before {
+      content: "✓";
+      color: #667eea;
+      font-weight: bold;
+      margin-right: 10px;
+      font-size: 1.2em;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 40px 30px;
+      }
+
+      .title {
+        font-size: 2em;
+      }
+
+      .btn {
+        padding: 15px 20px;
+        font-size: 1em;
+      }
+
+      .button-group {
+        gap: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">🗳️<br>ご当地めいすいくん総選挙</div>
+
+    <div class="subtitle">
+      マルチデバイス投票システムへようこそ<br>
+      複数のiPadから同時に投票できます
+    </div>
+
+    <div class="feature-list">
+      <div class="feature-item">リアルタイムで投票数が更新される</div>
+      <div class="feature-item">タッチフレンドリーなiPad投票画面</div>
+      <div class="feature-item">55インチモニターでの迫力ある結果表示</div>
+      <div class="feature-item">複数デバイス間での同期</div>
+    </div>
+
+    <div class="button-group">
+      <a href="vote.html" class="btn btn-vote">
+        <span class="icon">📱</span>投票画面を開く (iPad用)
+      </a>
+      <a href="display.html" class="btn btn-display">
+        <span class="icon">📺</span>表示画面を開く (モニター用)
+      </a>
+    </div>
+
+    <div class="footer">
+      <p>Firebase Realtime Database を使用した リアルタイムシステム</p>
+      <p style="margin-top: 10px; font-size: 0.85em;">© 2026 浦安市 Meisui World</p>
+    </div>
+  </div>
+</body>
+</html>
