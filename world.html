@@ -396,6 +396,16 @@
             .welcome-content h2 { font-size: 18px !important; }
             .welcome-content p { font-size: 14px !important; }
             #startButton { font-size: 18px !important; padding: 12px 40px !important; }
+
+            /* Mobile ranking panel responsive fix */
+            #barGraph {
+                top: auto !important;
+                bottom: 60px !important;
+                right: 5px !important;
+                width: 150px !important;
+                max-height: 40vh !important;
+                font-size: 10px !important;
+            }
         }
 
         /* Ranking panel: responsive */
@@ -925,15 +935,21 @@
         firebaseDb.ref('.info/connected').on('value', (snap) => {
             const indicator = document.getElementById('firebaseStatus');
             if (indicator) {
-                indicator.style.background = snap.val() ? '#4caf50' : '#f44336';
-                indicator.title = snap.val() ? 'Firebase接続中' : 'Firebase未接続';
+                if (snap.val()) {
+                    indicator.style.display = 'none'; // Hide when connected (don't distract)
+                } else {
+                    indicator.style.display = 'block';
+                    indicator.style.background = '#f44336';
+                    indicator.style.color = 'white';
+                    indicator.textContent = '⚠ オフライン - 投票が同期されません';
+                }
             }
         });
     </script>
 </head>
 <body>
     <!-- Firebase connection indicator -->
-    <div id="firebaseStatus" style="position:fixed;top:60px;left:10px;width:12px;height:12px;border-radius:50%;background:#f44336;z-index:9999;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);" title="Firebase未接続"></div>
+    <div id="firebaseStatus" style="position:fixed;top:55px;left:50%;transform:translateX(-50%);z-index:9999;padding:4px 16px;border-radius:20px;font-size:11px;font-weight:bold;font-family:sans-serif;display:none;pointer-events:none;"></div>
 
     <!-- Welcome Screen -->
     <div id="welcomeScreen">
@@ -3409,10 +3425,10 @@
 
             // Shadow
             ctx.save();
-            ctx.globalAlpha = 0.3;
+            ctx.globalAlpha = 0.25;
             ctx.fillStyle = '#000';
             ctx.beginPath();
-            ctx.ellipse(char.x, char.y + h / 2, w / 3, 6, 0, 0, Math.PI * 2);
+            ctx.ellipse(char.x, char.y + h / 2 + 5, w / 2.5, 8, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
 
@@ -3571,6 +3587,11 @@
         }
 
         function drawParticles() {
+            // Hard limit on particles to prevent memory issues
+            if (particles.length > 200) {
+                particles = particles.slice(-200);
+            }
+
             particles = particles.filter(p => {
                 if (p.type === 'confetti') {
                     return p.life > 0;
@@ -3641,8 +3662,9 @@
                             char.state = 'walking';
                             char.stateTimer = 0;
                             char.currentThought = null; // Clear thought when starting to walk
+                            char.locationDialogueShown = false;
                         }
-                    } else if (!char.currentThought && char.stateTimer > 5000) {
+                    } else if (!char.currentThought && char.stateTimer > 5000 && !char.locationDialogueShown) {
                         // Show random thought after location dialogue expires (stays for full idle period)
                         char.currentThought = char.thoughts[Math.floor(Math.random() * char.thoughts.length)];
                     }
@@ -3664,6 +3686,7 @@
                             if (waypoint && waypoint.name && locationDialogues[waypoint.name]) {
                                 const dialogues = locationDialogues[waypoint.name];
                                 char.currentThought = dialogues[char.type] || dialogues._default || null;
+                                char.locationDialogueShown = true;
                             }
                         }
                     } else {
@@ -4593,7 +4616,7 @@
                     min-height: 60px;
                     font-family: sans-serif;
                     transition: all 0.2s;
-                " onclick="handleQuizAnswer(this, ${isCorrect}, \`${quiz.explanation}\`, '${charType}', '${quiz.a}')">${choice}</button>`;
+                " data-correct="${isCorrect}" data-explanation="${quiz.explanation.replace(/"/g, '&quot;')}" data-chartype="${charType}" data-answer="${quiz.a.replace(/"/g, '&quot;')}" onclick="handleQuizAnswer(this, this.dataset.correct==='true', this.dataset.explanation, this.dataset.chartype, this.dataset.answer)">${choice}</button>`;
             });
             
             quizModal.innerHTML = `
