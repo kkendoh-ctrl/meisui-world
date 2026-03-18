@@ -1,0 +1,186 @@
+================================================================================
+GITHUB PUSH INSTRUCTIONS - Meisui World Voting System
+================================================================================
+
+This git repository is ready to be pushed to GitHub. Choose ONE of the three
+methods below based on your setup.
+
+================================================================================
+METHOD 1: GitHub CLI (gh) - RECOMMENDED
+================================================================================
+
+Prerequisites:
+  - GitHub CLI (gh) must be installed
+  - Must be authenticated to GitHub
+
+Commands:
+  cd /sessions/stoic-funny-faraday/mnt/めいすいくん/github-deploy/
+  git push -u origin main
+
+First time only:
+  gh auth login  # Follow prompts to authenticate
+
+Then push:
+  git push -u origin main
+
+Expected output:
+  Enumerating objects: 12, done.
+  Counting objects: 100% (12/12), done.
+  Delta compression using up to 4 threads
+  Compressing objects: 100% (10/10), done.
+  Writing objects: 100% (12/12), [size] bytes, done.
+  Total 12 (delta 2), reused 0 (delta 0), pack-reused 0
+  To https://github.com/kkendoh-ctrl/meisui-world.git
+   * [new branch]      main -> main
+  Branch 'main' set up to track remote branch 'main' from 'origin'.
+
+================================================================================
+METHOD 2: GitHub Web Interface (No CLI Required)
+================================================================================
+
+1. Go to GitHub repository:
+   https://github.com/kkendoh-ctrl/meisui-world
+
+2. Click "Upload files" button (in green "Code" dropdown menu)
+
+3. Select files to upload:
+   - vote.html
+   - display.html
+   - index.html
+   - README.md
+   - DEPLOYMENT.md
+   - TESTING.md
+
+4. Drag and drop files into the upload area
+
+5. Add commit message:
+   "Add voting system files: vote.html, display.html, index.html + docs"
+
+6. Click "Commit changes"
+
+7. Files will be uploaded to main branch
+
+================================================================================
+METHOD 3: Personal Access Token (PAT)
+================================================================================
+
+Prerequisites:
+  - GitHub Personal Access Token (PAT) generated
+  - PAT must have 'repo' scope
+
+Steps:
+
+1. Update remote URL with PAT:
+   git remote set-url origin https://[USERNAME]:[PAT]@github.com/kkendoh-ctrl/meisui-world.git
+   
+   Replace:
+   - [USERNAME] with: kkendoh-ctrl
+   - [PAT] with your actual token
+
+2. Push to GitHub:
+   git push -u origin main
+
+3. (Optional) Save credentials:
+   git config credential.helper store
+   (This will cache credentials for future use)
+
+================================================================================
+AFTER PUSHING - GITHUB PAGES CONFIGURATION
+================================================================================
+
+1. Go to repository settings:
+   https://github.com/kkendoh-ctrl/meisui-world/settings
+
+2. Navigate to "Pages" section (left sidebar)
+
+3. Configure Build and Deployment:
+   - Source: "Deploy from a branch"
+   - Branch: "main"
+   - Folder: "/ (root)"
+
+4. Click "Save"
+
+5. Wait 5-10 minutes for GitHub Pages to build
+
+6. Check "Your site is published at:" message
+   Expected: https://kkendoh-ctrl.github.io/meisui-world/
+
+================================================================================
+VERIFICATION - After GitHub Pages is Published
+================================================================================
+
+Test the public URLs:
+
+Landing Page:
+  https://kkendoh-ctrl.github.io/meisui-world/
+  (Should show welcome page with links)
+
+iPad Voting Interface:
+  https://kkendoh-ctrl.github.io/meisui-world/vote.html
+  (Should show 6 character cards, connection indicator)
+
+Monitor Display:
+  https://kkendoh-ctrl.github.io/meisui-world/display.html
+  (Should show animated world map and ranking)
+
+Documentation:
+  https://github.com/kkendoh-ctrl/meisui-world/blob/main/README.md
+  (Should display in GitHub)
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Q: GitHub Pages shows 404 error
+A: 1. Wait 5-10 minutes for initial build
+   2. Check Settings → Pages shows "Your site is published"
+   3. Clear browser cache (Ctrl+Shift+Delete)
+   4. Try hard refresh (Ctrl+F5)
+
+Q: Push fails with "fatal: could not read Username"
+A: Use GitHub CLI (gh) which handles authentication automatically:
+   gh auth login
+   git push -u origin main
+
+Q: Authentication fails
+A: 1. Verify Personal Access Token has 'repo' scope
+   2. Ensure token is not expired
+   3. Try: git credential reject github.com
+   4. Then try push again (will prompt for credentials)
+
+Q: Files don't appear on GitHub
+A: 1. Check "git status" shows clean working tree
+   2. Verify commit was created: git log --oneline
+   3. Ensure you're on 'main' branch: git branch
+   4. Try: git push -f origin main (force push if needed)
+
+================================================================================
+REPOSITORY INFORMATION
+================================================================================
+
+Repository URL:  https://github.com/kkendoh-ctrl/meisui-world
+Branch:          main
+Local Path:      /sessions/stoic-funny-faraday/mnt/めいすいくん/github-deploy/
+Files Ready:     vote.html, display.html, index.html
+                 README.md, DEPLOYMENT.md, TESTING.md
+
+Commits:         4 commits, all files tracked
+Status:          Ready to push
+Git Remote:      origin (https://github.com/kkendoh-ctrl/meisui-world.git)
+
+================================================================================
+Next Steps After Successful Push
+================================================================================
+
+1. Enable GitHub Pages (Settings → Pages)
+2. Wait for build completion (5-10 minutes)
+3. Test public URLs in browser
+4. Run testing scenarios from TESTING.md
+5. Test on actual iPads and 55-inch monitor
+6. Verify Firebase real-time synchronization
+
+For detailed instructions, see: DEPLOYMENT.md
+For testing procedures, see: TESTING.md
+For full documentation, see: README.md
+
+================================================================================
