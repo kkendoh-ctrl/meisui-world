@@ -4484,7 +4484,7 @@
         }
 
         // Listen for real-time vote updates from Firebase
-        votesRef.on('value', (snapshot) => {
+        function handleVoteSnapshot(snapshot) {
             const data = snapshot.val() || {};
             votes = {
                 meisui: data.meisui || 0,
@@ -4497,10 +4497,16 @@
             totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
             updateVoteDisplay();
             updateYearDisplay();
-            // Check building unlocks when votes change (from any device)
             if (typeof checkBuildingUnlock === 'function') {
                 checkBuildingUnlock(totalVotes - 1);
             }
+        }
+        votesRef.on('value', handleVoteSnapshot, (error) => {
+            // If listener fails (permission error), retry after 3 seconds
+            console.error('Firebase listener error:', error);
+            setTimeout(() => {
+                votesRef.on('value', handleVoteSnapshot);
+            }, 3000);
         });
 
         // Character metadata for voting modal
