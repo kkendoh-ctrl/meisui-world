@@ -343,6 +343,15 @@
 
         /* ========== MOBILE RESPONSIVE ========== */
         @media (max-width: 768px) {
+            /* Year display: smaller on mobile */
+            #yearText {
+                font-size: 28px !important;
+                letter-spacing: 2px;
+            }
+            #worldLineText {
+                font-size: 11px !important;
+            }
+
             /* Bottom action buttons: reposition for mobile */
             #bottomButtons {
                 left: 10px !important;
@@ -771,6 +780,66 @@
             }
         }
 
+        /* Year Display Styles */
+        #yearDisplay {
+            position: fixed;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 150;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        #yearText {
+            font-size: 48px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 20px rgba(0,0,0,0.5);
+            font-family: sans-serif;
+            letter-spacing: 4px;
+        }
+
+        #worldLineText {
+            font-size: 14px;
+            color: #ffd700;
+            text-shadow: 1px 1px 0 #000;
+            font-family: sans-serif;
+        }
+
+        /* Era Event Notification */
+        @keyframes eraEventPop {
+            0% {
+                transform: scale(0) translateY(-20px);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1) translateY(0);
+            }
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .era-event-notification {
+            position: fixed;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 16px;
+            z-index: 400;
+            text-align: center;
+            font-family: sans-serif;
+            animation: eraEventPop 0.4s ease;
+            border: 3px solid #ffd700;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+        }
+
         @keyframes popupBounce {
             0% {
                 transform: translate(-50%, -50%) scale(0);
@@ -987,6 +1056,12 @@
 
     <div class="title-bar">
         🗳️ 仮想うらやす めいすいくんワールド 🌏
+    </div>
+
+    <!-- Year Display (1889-2100) -->
+    <div id="yearDisplay" style="position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:150;text-align:center;pointer-events:none;">
+        <div id="yearText" style="font-size:48px;font-weight:900;color:#fff;text-shadow:3px 3px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,0 0 20px rgba(0,0,0,0.5);font-family:sans-serif;letter-spacing:4px;">1889年</div>
+        <div id="worldLineText" style="font-size:14px;color:#ffd700;text-shadow:1px 1px 0 #000;font-family:sans-serif;">第1世界線</div>
     </div>
 
     <canvas id="canvas"></canvas>
@@ -2404,6 +2479,9 @@
         // 投票所の建物描画
         // ============================================
         function drawVotingStations(ctx, now) {
+            // Voting stations only appear in modern era (2026 onwards)
+            if (getCurrentYear && getCurrentYear() < 2026) return;
+
             const votingStations = landmarks.filter(lm => lm.type === 'vote');
             votingStations.forEach((station, idx) => {
                 const x = station.x;
@@ -3922,6 +4000,42 @@
             }
         }
 
+        // ========== ERA-BASED LAND POLYGONS ==========
+        const eraLandPolygons = {
+            // 1889-1963: Just the old fishing village (元町 only)
+            1889: [
+                [540, 100], [660, 80], [720, 100], [740, 200],
+                [730, 350], [700, 450], [650, 500], [580, 480],
+                [520, 400], [500, 300], [510, 200]
+            ],
+            // 1968: First reclamation (東野・富岡・今川 added)
+            1968: [
+                [540, 100], [660, 80], [750, 90], [850, 120],
+                [880, 250], [870, 400], [830, 500], [750, 550],
+                [650, 520], [580, 480], [520, 400], [500, 300], [510, 200]
+            ],
+            // 1971: Second reclamation (海楽・美浜・入船)
+            1971: [
+                [540, 100], [660, 80], [800, 80], [950, 120],
+                [970, 300], [950, 450], [900, 550], [800, 580],
+                [700, 560], [600, 500], [520, 400], [500, 300], [510, 200]
+            ],
+            // 1975: Maihama added
+            1975: [
+                [490, 100], [660, 80], [800, 80], [950, 120],
+                [970, 300], [950, 450], [900, 580], [800, 620],
+                [650, 650], [530, 600], [480, 500], [470, 350], [480, 200]
+            ],
+            // 1981: All reclamation complete (高洲・日の出・明海・港・千鳥)
+            1981: [
+                [490, 100], [660, 80], [850, 60], [1050, 80],
+                [1150, 150], [1170, 350], [1150, 500], [1100, 620],
+                [950, 700], [800, 720], [650, 700], [530, 650],
+                [480, 550], [470, 400], [480, 200]
+            ],
+            // 2026+: Use real map image (no polygon needed)
+        };
+
         // Animation loop
         let lastTime = Date.now();
         function animate() {
@@ -3962,9 +4076,103 @@
             ctx.scale(camera.zoom, camera.zoom);
             ctx.translate(-camera.x, -camera.y);
 
-            // Draw real map image as background
-            if (mapImage && mapImage.complete) {
+            // Draw map based on current year
+            const currentYear = getCurrentYear();
+            if (currentYear >= 2026 && mapImage && mapImage.complete) {
+                // Modern era: use real map image
                 ctx.drawImage(mapImage, 0, 0, MAP_W, MAP_H);
+            } else {
+                // Historical era: draw simplified map
+                // Ocean background
+                ctx.fillStyle = '#5B9BD5';
+                ctx.fillRect(0, 0, MAP_W, MAP_H);
+
+                // Find the right polygon for current year
+                let landPoly = eraLandPolygons[1889]; // default
+                const eraYears = Object.keys(eraLandPolygons).map(Number).sort((a, b) => a - b);
+                for (let i = eraYears.length - 1; i >= 0; i--) {
+                    if (currentYear >= eraYears[i]) {
+                        landPoly = eraLandPolygons[eraYears[i]];
+                        break;
+                    }
+                }
+
+                // Draw land
+                ctx.fillStyle = '#8FBC8F';
+                ctx.beginPath();
+                ctx.moveTo(landPoly[0][0], landPoly[0][1]);
+                for (let i = 1; i < landPoly.length; i++) {
+                    ctx.lineTo(landPoly[i][0], landPoly[i][1]);
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                // Draw border
+                ctx.strokeStyle = '#5B7B5B';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Draw 旧江戸川 river on west side
+                ctx.strokeStyle = '#4A8AC7';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(490, 50);
+                ctx.lineTo(480, 200);
+                ctx.lineTo(470, 400);
+                ctx.lineTo(460, 600);
+                ctx.stroke();
+
+                // Era label on the map
+                ctx.font = 'bold 20px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.fillText(currentYear + '年の浦安', MAP_W / 2, MAP_H - 30);
+            }
+
+            // For future years (after 2026), draw easter egg elements on top of map
+            if (currentYear >= 2049) {
+                // Draw bridge to Kasai
+                ctx.strokeStyle = '#E65100';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([10, 5]);
+                ctx.beginPath();
+                ctx.moveTo(450, 300);
+                ctx.lineTo(350, 250);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillStyle = '#E65100';
+                ctx.textAlign = 'center';
+                ctx.fillText('葛西大橋', 400, 260);
+            }
+            if (currentYear >= 2069) {
+                // Ropeway
+                ctx.strokeStyle = '#9C27B0';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(608, 132); // 浦安駅
+                ctx.lineTo(935, 364); // 新浦安駅
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#9C27B0';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('ロープウェイ', 770, 240);
+            }
+            if (currentYear >= 2089) {
+                // Marine city
+                ctx.fillStyle = 'rgba(0, 188, 212, 0.3)';
+                ctx.beginPath();
+                ctx.arc(1200, 850, 80, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#00BCD4';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.fillStyle = '#00BCD4';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('海上都市', 1200, 855);
             }
 
             // Draw voting station buildings on the map
@@ -4179,6 +4387,79 @@
         let votes = { meisui: 0, meisui_chan: 0, tsutsuji: 0, bekabune: 0, asari: 0, ryoushi: 0 };
         let totalVotes = 0;
 
+        // ========== YEAR SYSTEM (1889-2100) ==========
+        const START_YEAR = 1889;
+        const END_YEAR = 2100;
+        const YEARS_PER_CYCLE = END_YEAR - START_YEAR; // 211
+
+        function getCurrentYear() {
+            return START_YEAR + (totalVotes % YEARS_PER_CYCLE);
+        }
+
+        function getWorldLine() {
+            return Math.floor(totalVotes / YEARS_PER_CYCLE) + 1;
+        }
+
+        function updateYearDisplay() {
+            const year = getCurrentYear();
+            const worldLine = getWorldLine();
+            const yearEl = document.getElementById('yearText');
+            const wlEl = document.getElementById('worldLineText');
+            if (yearEl) yearEl.textContent = year + '年';
+            if (wlEl) wlEl.textContent = '第' + worldLine + '世界線';
+        }
+
+        // Historical events triggered by year milestones
+        const historicalEvents = {
+            1889: {text: '浦安村 誕生', emoji: '🏘️'},
+            1909: {text: '浦安町に昇格', emoji: '🏛️'},
+            1962: {text: '漁業権の一部を放棄', emoji: '🐟'},
+            1964: {text: '海面埋め立て事業 開始！', emoji: '🏗️'},
+            1968: {text: '東野・富岡・今川 誕生', emoji: '🌊'},
+            1969: {text: '地下鉄東西線 開通！', emoji: '🚇'},
+            1971: {text: '漁業権 全面放棄 / 海楽・美浜・入船 誕生', emoji: '🌊'},
+            1975: {text: '舞浜 誕生！', emoji: '✨'},
+            1978: {text: '日の出・明海 誕生', emoji: '🌅'},
+            1980: {text: '高洲 誕生', emoji: '🏙️'},
+            1981: {text: '浦安市 市制施行！人口65,662人', emoji: '🎉'},
+            1983: {text: '東京ディズニーランド 開園！', emoji: '🏰'},
+            1988: {text: 'JR京葉線 開通！新浦安駅・舞浜駅', emoji: '🚃'},
+            2001: {text: '東京ディズニーシー 開園', emoji: '🌊'},
+            2011: {text: '東日本大震災… 液状化被害', emoji: '🌏'},
+            2026: {text: '現在の浦安 — ここから未来へ！', emoji: '🗳️'},
+            2049: {text: '葛西に橋が架かった！', emoji: '🌉'},
+            2069: {text: '浦安↔新浦安 ロープウェイ開通！', emoji: '🚡'},
+            2089: {text: '海上都市計画 始動！', emoji: '🏙️'},
+        };
+
+        function showEraEvent(year) {
+            const event = historicalEvents[year];
+            if (!event) return;
+
+            const overlay = document.createElement('div');
+            overlay.className = 'era-event-notification';
+            overlay.style.cssText = `
+                position:fixed;top:120px;left:50%;transform:translateX(-50%);
+                background:rgba(0,0,0,0.85);color:white;padding:20px 40px;
+                border-radius:16px;z-index:400;text-align:center;
+                font-family:sans-serif;animation:eraEventPop 0.4s ease;
+                border:3px solid #ffd700;box-shadow:0 8px 30px rgba(0,0,0,0.5);
+                max-width:500px;
+            `;
+            overlay.innerHTML = `
+                <div style="font-size:48px;margin-bottom:8px;">${event.emoji}</div>
+                <div style="font-size:14px;color:#ffd700;margin-bottom:4px;">${year}年</div>
+                <div style="font-size:22px;font-weight:bold;">${event.text}</div>
+            `;
+            document.body.appendChild(overlay);
+
+            setTimeout(() => {
+                overlay.style.transition = 'opacity 0.5s';
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 500);
+            }, 3000);
+        }
+
         // Listen for real-time vote updates from Firebase
         votesRef.on('value', (snapshot) => {
             const data = snapshot.val() || {};
@@ -4192,6 +4473,7 @@
             };
             totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
             updateVoteDisplay();
+            updateYearDisplay();
             // Check building unlocks when votes change (from any device)
             if (typeof checkBuildingUnlock === 'function') {
                 checkBuildingUnlock(totalVotes - 1);
@@ -4246,6 +4528,18 @@
             votes[charType]++;
             totalVotes++;
             updateVoteDisplay();
+            updateYearDisplay();
+
+            // Check for era event
+            const newYear = getCurrentYear();
+            if (historicalEvents[newYear]) {
+                setTimeout(() => showEraEvent(newYear), 1500);
+            }
+
+            // Check for ending (2100)
+            if (newYear === END_YEAR) {
+                setTimeout(() => showEnding(), 3000);
+            }
 
             // V5 Features: Play vote sound
             playSound('vote');
@@ -4336,6 +4630,101 @@
                 document.getElementById('voteBtn').style.pointerEvents = 'auto';
             }, 7000);
         }
+
+        // ========== ENDING SEQUENCE (2100) ==========
+        function showEnding() {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position:fixed;top:0;left:0;width:100%;height:100%;
+                background:rgba(0,0,20,0.9);z-index:9000;
+                display:flex;flex-direction:column;align-items:center;justify-content:center;
+                font-family:sans-serif;
+            `;
+
+            // Fireworks canvas
+            const fwCanvas = document.createElement('canvas');
+            fwCanvas.width = window.innerWidth;
+            fwCanvas.height = window.innerHeight;
+            fwCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;';
+            overlay.appendChild(fwCanvas);
+
+            const fwCtx = fwCanvas.getContext('2d');
+            let fireworks = [];
+
+            function spawnFirework() {
+                const x = Math.random() * fwCanvas.width;
+                const y = Math.random() * fwCanvas.height * 0.5;
+                const color = ['#ff1744','#ffd600','#00e676','#2979ff','#e040fb','#ff6d00'][Math.floor(Math.random()*6)];
+                for (let i = 0; i < 40; i++) {
+                    const angle = (i / 40) * Math.PI * 2;
+                    const speed = 2 + Math.random() * 4;
+                    fireworks.push({
+                        x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                        life: 60 + Math.random() * 40, color, size: 2 + Math.random() * 2
+                    });
+                }
+            }
+
+            function animateFireworks() {
+                fwCtx.fillStyle = 'rgba(0,0,20,0.15)';
+                fwCtx.fillRect(0, 0, fwCanvas.width, fwCanvas.height);
+
+                fireworks = fireworks.filter(p => p.life > 0);
+                fireworks.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.03;
+                    p.life--;
+                    fwCtx.globalAlpha = p.life / 100;
+                    fwCtx.fillStyle = p.color;
+                    fwCtx.beginPath();
+                    fwCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    fwCtx.fill();
+                });
+                fwCtx.globalAlpha = 1;
+
+                if (overlay.parentNode) requestAnimationFrame(animateFireworks);
+            }
+
+            // Spawn fireworks periodically
+            const fwInterval = setInterval(spawnFirework, 300);
+            animateFireworks();
+
+            // Text overlay
+            const textDiv = document.createElement('div');
+            textDiv.style.cssText = `
+                position:relative;z-index:1;text-align:center;
+                animation:popScale 1s ease;
+            `;
+
+            const worldLine = getWorldLine();
+            textDiv.innerHTML = `
+                <div style="font-size:80px;margin-bottom:20px;">🎆</div>
+                <div style="font-size:56px;font-weight:900;color:#ffd700;text-shadow:0 0 30px #ffd700;margin-bottom:10px;">2100年</div>
+                <div style="font-size:36px;font-weight:bold;color:white;margin-bottom:20px;">おめでとう！素敵な未来！！</div>
+                <div style="font-size:18px;color:#aaa;margin-bottom:30px;">第${worldLine}世界線 クリア！　総投票数: ${totalVotes}票</div>
+                <div style="font-size:16px;color:#ffd700;">— 次の世界線が始まります —</div>
+            `;
+            overlay.appendChild(textDiv);
+
+            document.body.appendChild(overlay);
+
+            // Play ending sound
+            playSound('levelup');
+
+            // After 8 seconds, fade out and reset
+            setTimeout(() => {
+                clearInterval(fwInterval);
+                overlay.style.transition = 'opacity 1s';
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.remove();
+                    // Year resets automatically because getCurrentYear uses modulo
+                    updateYearDisplay();
+                }, 1000);
+            }, 8000);
+        }
+
         function updateVoteDisplay() {
             // Update vote counts in modal
             Object.keys(votes).forEach(type => {
