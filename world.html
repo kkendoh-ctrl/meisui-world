@@ -4419,19 +4419,26 @@
         // 22票で1周: 0票=1889, 1票=1899, ..., 20票=2089, 21票=2100, 22票→1889(次の世界線)
         const VOTES_PER_CYCLE = 22;
 
+        function getEffectiveVotes() {
+            // worldLineOffset分のサイクルを差し引いて、現在のサイクル内の票数を計算
+            return totalVotes - (worldLineOffset || 0) * VOTES_PER_CYCLE;
+        }
+
         function getCurrentYear() {
-            const votesInCycle = totalVotes % VOTES_PER_CYCLE;
-            if (votesInCycle >= 21) return END_YEAR; // 21票目で2100年到達
+            const effective = getEffectiveVotes();
+            const votesInCycle = ((effective % VOTES_PER_CYCLE) + VOTES_PER_CYCLE) % VOTES_PER_CYCLE; // 負の数対策
+            if (votesInCycle >= 21) return END_YEAR;
             return START_YEAR + votesInCycle * YEARS_PER_VOTE;
         }
 
         function getWorldLine() {
-            return Math.floor(totalVotes / VOTES_PER_CYCLE) + 1;
+            return (worldLineOffset || 0) + 1;
         }
 
         function isEndingTrigger() {
-            // 21票目（2100年到達時）にエンディング発動
-            return (totalVotes % VOTES_PER_CYCLE) === 21;
+            const effective = getEffectiveVotes();
+            const votesInCycle = ((effective % VOTES_PER_CYCLE) + VOTES_PER_CYCLE) % VOTES_PER_CYCLE;
+            return votesInCycle === 21;
         }
 
         function updateYearDisplay() {
@@ -4794,8 +4801,14 @@
             }, 2000);
         }
 
+        // World line offset stored in Firebase (does not change vote counts)
+        var worldLineOffset = 0;
+        firebaseDb.ref('worldLineOffset').on('value', snap => {
+            worldLineOffset = snap.val() || 0;
+            updateYearDisplay();
+        });
+
         function showNextWorldLineButton() {
-            // Remove existing button if any
             const existing = document.getElementById('nextWorldLineBtn');
             if (existing) existing.remove();
 
@@ -4823,22 +4836,10 @@
             `;
             btn.onclick = function() {
                 btn.remove();
-                // Add 1 vote to advance past 2100 → loops to 1889 (next world line)
-                votesRef.once('value').then(snap => {
-                    const current = snap.val() || {};
-                    const chars = ['meisui', 'tsutsuji', 'meisui_chan', 'bekabune', 'asari', 'ryoushi'];
-                    const randomChar = chars[Math.floor(Math.random() * chars.length)];
-                    const updates = {};
-                    for (const c of chars) {
-                        updates[c] = current[c] || 0;
-                    }
-                    updates[randomChar] = (updates[randomChar] || 0) + 1;
-                    return votesRef.set(updates);
-                }).then(() => {
-                    endingActive = false;
-                    updateYearDisplay();
-                    playSound('vote');
-                });
+                // Increment world line offset (no vote change)
+                firebaseDb.ref('worldLineOffset').transaction(current => (current || 0) + 1);
+                endingActive = false;
+                playSound('vote');
             };
             document.body.appendChild(btn);
         }
