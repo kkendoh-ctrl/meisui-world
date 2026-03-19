@@ -4370,20 +4370,12 @@
         }
 
         // Character click handler
-        canvas.addEventListener('click', e => {
-            const rect = canvas.getBoundingClientRect();
-            const mx = (e.clientX - rect.left - W / 2) / camera.zoom + camera.x;
-            const my = (e.clientY - rect.top - H / 2) / camera.zoom + camera.y;
-
-            characters.forEach(char => {
-                const dx = char.x - mx;
-                const dy = char.y - my;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-
-                if (dist < 30) {
-                    showCharacterPopup(e.clientX, e.clientY, char);
-                }
-            });
+        canvas.addEventListener('dblclick', e => {
+            const map = screenToMap(e.clientX, e.clientY);
+            const char = findCharAt(map.x, map.y);
+            if (char) {
+                showCharacterPopup(e.clientX, e.clientY, char);
+            }
         });
 
         function showCharacterPopup(px, py, char) {
