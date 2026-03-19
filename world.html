@@ -4503,7 +4503,7 @@
             }
             // Check ending from any source (including debug buttons)
             if (getCurrentYear() === END_YEAR && typeof showEnding === 'function') {
-                setTimeout(() => showEnding(), 1000);
+                setTimeout(() => showEnding(), 2000);
             }
         }
         votesRef.on('value', handleVoteSnapshot, (error) => {
@@ -4570,9 +4570,9 @@
                 setTimeout(() => showEraEvent(newYear), 1500);
             }
 
-            // Check for ending (2100)
+            // Check for ending (2100) — after quiz finishes (~12s from vote)
             if (newYear === END_YEAR) {
-                setTimeout(() => showEnding(), 3000);
+                setTimeout(() => showEnding(), 14000);
             }
 
             // V5 Features: Play vote sound
@@ -4666,97 +4666,121 @@
         }
 
         // ========== ENDING SEQUENCE (2100) ==========
+        let endingActive = false;
         function showEnding() {
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position:fixed;top:0;left:0;width:100%;height:100%;
-                background:rgba(0,0,20,0.9);z-index:9000;
-                display:flex;flex-direction:column;align-items:center;justify-content:center;
-                font-family:sans-serif;
-            `;
+            if (endingActive) return;
+            endingActive = true;
 
-            // Fireworks canvas
+            // Layer 1: Fireworks over the map (transparent, map visible)
+            const fwOverlay = document.createElement('div');
+            fwOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:8000;pointer-events:none;';
             const fwCanvas = document.createElement('canvas');
             fwCanvas.width = window.innerWidth;
             fwCanvas.height = window.innerHeight;
-            fwCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;';
-            overlay.appendChild(fwCanvas);
+            fwCanvas.style.cssText = 'width:100%;height:100%;';
+            fwOverlay.appendChild(fwCanvas);
+            document.body.appendChild(fwOverlay);
 
             const fwCtx = fwCanvas.getContext('2d');
-            let fireworks = [];
+            let fwParticles = [];
 
             function spawnFirework() {
-                const x = Math.random() * fwCanvas.width;
-                const y = Math.random() * fwCanvas.height * 0.5;
-                const color = ['#ff1744','#ffd600','#00e676','#2979ff','#e040fb','#ff6d00'][Math.floor(Math.random()*6)];
-                for (let i = 0; i < 40; i++) {
-                    const angle = (i / 40) * Math.PI * 2;
-                    const speed = 2 + Math.random() * 4;
-                    fireworks.push({
-                        x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-                        life: 60 + Math.random() * 40, color, size: 2 + Math.random() * 2
+                const x = 100 + Math.random() * (fwCanvas.width - 200);
+                const y = 50 + Math.random() * (fwCanvas.height * 0.4);
+                const colors = ['#ff1744','#ffd600','#00e676','#2979ff','#e040fb','#ff6d00','#ff4081','#76ff03'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const count = 30 + Math.floor(Math.random() * 30);
+                for (let i = 0; i < count; i++) {
+                    const angle = (i / count) * Math.PI * 2;
+                    const speed = 1.5 + Math.random() * 5;
+                    fwParticles.push({
+                        x, y,
+                        vx: Math.cos(angle) * speed + (Math.random() - 0.5),
+                        vy: Math.sin(angle) * speed + (Math.random() - 0.5),
+                        life: 50 + Math.random() * 50,
+                        maxLife: 50 + Math.random() * 50,
+                        color,
+                        size: 1.5 + Math.random() * 3
                     });
                 }
             }
 
-            function animateFireworks() {
-                fwCtx.fillStyle = 'rgba(0,0,20,0.15)';
-                fwCtx.fillRect(0, 0, fwCanvas.width, fwCanvas.height);
-
-                fireworks = fireworks.filter(p => p.life > 0);
-                fireworks.forEach(p => {
+            function animateFw() {
+                fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+                fwParticles = fwParticles.filter(p => p.life > 0);
+                fwParticles.forEach(p => {
                     p.x += p.vx;
                     p.y += p.vy;
-                    p.vy += 0.03;
+                    p.vy += 0.04;
+                    p.vx *= 0.99;
                     p.life--;
-                    fwCtx.globalAlpha = p.life / 100;
+                    const alpha = p.life / p.maxLife;
+                    fwCtx.globalAlpha = alpha;
                     fwCtx.fillStyle = p.color;
+                    fwCtx.shadowColor = p.color;
+                    fwCtx.shadowBlur = 6;
                     fwCtx.beginPath();
-                    fwCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    fwCtx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
                     fwCtx.fill();
                 });
                 fwCtx.globalAlpha = 1;
-
-                if (overlay.parentNode) requestAnimationFrame(animateFireworks);
+                fwCtx.shadowBlur = 0;
+                if (fwOverlay.parentNode) requestAnimationFrame(animateFw);
             }
 
-            // Spawn fireworks periodically
-            const fwInterval = setInterval(spawnFirework, 300);
-            animateFireworks();
+            // Start fireworks — rapid bursts
+            spawnFirework();
+            spawnFirework();
+            const fwInterval = setInterval(() => {
+                spawnFirework();
+                if (Math.random() > 0.5) spawnFirework(); // double burst sometimes
+            }, 400);
+            animateFw();
 
-            // Text overlay
-            const textDiv = document.createElement('div');
-            textDiv.style.cssText = `
-                position:relative;z-index:1;text-align:center;
-                animation:popScale 1s ease;
-            `;
-
-            const worldLine = getWorldLine();
-            textDiv.innerHTML = `
-                <div style="font-size:80px;margin-bottom:20px;">🎆</div>
-                <div style="font-size:56px;font-weight:900;color:#ffd700;text-shadow:0 0 30px #ffd700;margin-bottom:10px;">2100年</div>
-                <div style="font-size:36px;font-weight:bold;color:white;margin-bottom:20px;">おめでとう！素敵な未来！！</div>
-                <div style="font-size:18px;color:#aaa;margin-bottom:30px;">第${worldLine}世界線 クリア！　総投票数: ${totalVotes}票</div>
-                <div style="font-size:16px;color:#ffd700;">— 次の世界線が始まります —</div>
-            `;
-            overlay.appendChild(textDiv);
-
-            document.body.appendChild(overlay);
-
-            // Play ending sound
+            // Play sound
             playSound('levelup');
 
-            // After 10 seconds, fade out and reset
+            // Layer 2: Semi-transparent popup (after 2 seconds, map stays visible)
             setTimeout(() => {
-                clearInterval(fwInterval);
-                overlay.style.transition = 'opacity 1.5s';
-                overlay.style.opacity = '0';
+                const popup = document.createElement('div');
+                popup.style.cssText = `
+                    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+                    z-index:8500;text-align:center;font-family:sans-serif;
+                    background:rgba(0,0,30,0.75);backdrop-filter:blur(8px);
+                    border-radius:24px;padding:40px 60px;
+                    border:3px solid rgba(255,215,0,0.6);
+                    box-shadow:0 0 60px rgba(255,215,0,0.3),0 20px 60px rgba(0,0,0,0.5);
+                    animation:popScale 0.8s cubic-bezier(0.34,1.56,0.64,1);
+                    max-width:90vw;
+                `;
+
+                const worldLine = getWorldLine();
+                popup.innerHTML = `
+                    <div style="font-size:64px;margin-bottom:12px;">🎆🎇🎆</div>
+                    <div style="font-size:52px;font-weight:900;color:#ffd700;text-shadow:0 0 30px rgba(255,215,0,0.8);margin-bottom:8px;">2100年</div>
+                    <div style="font-size:32px;font-weight:bold;color:white;margin-bottom:16px;text-shadow:0 2px 10px rgba(0,0,0,0.5);">おめでとう！素敵な未来！！</div>
+                    <div style="width:80%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,215,0,0.5),transparent);margin:16px auto;"></div>
+                    <div style="font-size:16px;color:rgba(255,255,255,0.8);margin-bottom:8px;">第${worldLine}世界線 クリア！</div>
+                    <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:20px;">総投票数: ${totalVotes}票</div>
+                    <div style="font-size:18px;color:#ffd700;font-weight:bold;animation:popScale 0.5s ease 0.5s both;">— 次の世界線が始まります —</div>
+                `;
+                document.body.appendChild(popup);
+
+                // After 10 seconds total (8 more), fade everything out
                 setTimeout(() => {
-                    overlay.remove();
-                    // Year resets automatically because getCurrentYear uses modulo
-                    updateYearDisplay();
-                }, 1500);
-            }, 10000);
+                    clearInterval(fwInterval);
+                    popup.style.transition = 'opacity 1.5s';
+                    popup.style.opacity = '0';
+                    fwOverlay.style.transition = 'opacity 1.5s';
+                    fwOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        popup.remove();
+                        fwOverlay.remove();
+                        endingActive = false;
+                        updateYearDisplay();
+                    }, 1500);
+                }, 8000);
+            }, 2000);
         }
 
         function updateVoteDisplay() {
