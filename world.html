@@ -4676,14 +4676,15 @@
         }
 
         // ========== ENDING SEQUENCE (2100) ==========
-        let endingActive = false;
+        var endingActive = false; // var for global debug access
         function showEnding() {
             if (endingActive) return;
             endingActive = true;
+            console.log('🎆 ENDING STARTED! Year:', getCurrentYear(), 'WorldLine:', getWorldLine());
 
-            // Layer 1: Fireworks over the map (transparent, map visible)
+            // Layer 1: Fireworks over the map (semi-dark overlay so fireworks are visible)
             const fwOverlay = document.createElement('div');
-            fwOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:8000;pointer-events:none;';
+            fwOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:8000;pointer-events:none;background:rgba(0,0,20,0.3);';
             const fwCanvas = document.createElement('canvas');
             fwCanvas.width = window.innerWidth;
             fwCanvas.height = window.innerHeight;
