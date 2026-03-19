@@ -4410,18 +4410,26 @@
         let votes = { meisui: 0, meisui_chan: 0, tsutsuji: 0, bekabune: 0, asari: 0, ryoushi: 0 };
         let totalVotes = 0;
 
-        // ========== YEAR SYSTEM (1889-2100) ==========
+        // ========== YEAR SYSTEM (1889-2100, 1票=10年) ==========
         const START_YEAR = 1889;
         const END_YEAR = 2100;
-        const YEARS_PER_CYCLE = END_YEAR - START_YEAR + 1; // 212 (1889~2100 inclusive)
+        const YEARS_PER_VOTE = 10; // 1票で10年進む
+        const TOTAL_YEARS = END_YEAR - START_YEAR; // 211年
+        const VOTES_PER_CYCLE = Math.ceil(TOTAL_YEARS / YEARS_PER_VOTE); // 22票で1周
 
         function getCurrentYear() {
-            const yearInCycle = totalVotes % YEARS_PER_CYCLE;
-            return START_YEAR + yearInCycle;
+            const votesInCycle = totalVotes % VOTES_PER_CYCLE;
+            const year = START_YEAR + votesInCycle * YEARS_PER_VOTE;
+            return Math.min(year, END_YEAR);
         }
 
         function getWorldLine() {
-            return Math.floor(totalVotes / YEARS_PER_CYCLE) + 1;
+            return Math.floor(totalVotes / VOTES_PER_CYCLE) + 1;
+        }
+
+        function isEndingTrigger() {
+            // エンディングは2100年を超えた瞬間（サイクルの最後の票）
+            return (totalVotes % VOTES_PER_CYCLE) === 0 && totalVotes > 0;
         }
 
         function updateYearDisplay() {
@@ -4502,7 +4510,7 @@
                 checkBuildingUnlock(totalVotes - 1);
             }
             // Check ending from any source (including debug buttons)
-            if (getCurrentYear() === END_YEAR && typeof showEnding === 'function') {
+            if (isEndingTrigger() && typeof showEnding === 'function') {
                 setTimeout(() => showEnding(), 2000);
             }
         }
@@ -4570,8 +4578,8 @@
                 setTimeout(() => showEraEvent(newYear), 1500);
             }
 
-            // Check for ending (2100) — after quiz finishes (~12s from vote)
-            if (newYear === END_YEAR) {
+            // Check for ending (2100超え) — after quiz finishes (~14s from vote)
+            if (isEndingTrigger()) {
                 setTimeout(() => showEnding(), 14000);
             }
 
