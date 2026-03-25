@@ -2484,25 +2484,30 @@ h<!DOCTYPE html>
         // 地図画像のAI生成文字修正
         // ============================================
         function fixMapTextLabels(ctx) {
-            // 境川: AI生成で文字が崩れている（約 x=1140-1190, y=575-655）
+            // 境川: AI生成で文字が崩れているので、角丸白背景＋正しい文字で上書き
             ctx.save();
-            // 崩れた文字エリアを周囲の水色で自然に隠す
-            ctx.fillStyle = 'rgb(201,220,241)';
-            ctx.fillRect(1125, 525, 100, 160);
-            // 正しい「境川」を縦書きで描画（白フチ付きで読みやすく）
-            ctx.font = 'bold 28px "Hiragino Sans", "Yu Gothic", sans-serif';
+            // 角丸の白背景で崩れた文字を完全に覆う
+            ctx.fillStyle = 'rgba(255,255,255,0.95)';
+            const rx = 1145, ry = 555, rw = 65, rh = 95, r = 8;
+            ctx.beginPath();
+            ctx.moveTo(rx + r, ry);
+            ctx.lineTo(rx + rw - r, ry);
+            ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + r);
+            ctx.lineTo(rx + rw, ry + rh - r);
+            ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - r, ry + rh);
+            ctx.lineTo(rx + r, ry + rh);
+            ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - r);
+            ctx.lineTo(rx, ry + r);
+            ctx.quadraticCurveTo(rx, ry, rx + r, ry);
+            ctx.closePath();
+            ctx.fill();
+            // 正しい「境川」を縦書きで描画
+            ctx.font = 'bold 30px "Hiragino Sans", "Yu Gothic", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            // 白フチ（ストローク）
-            ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-            ctx.lineWidth = 4;
-            ctx.lineJoin = 'round';
-            ctx.strokeText('境', 1175, 575);
-            ctx.strokeText('川', 1175, 608);
-            // 本文（青色）
             ctx.fillStyle = '#2E7DB5';
-            ctx.fillText('境', 1175, 575);
-            ctx.fillText('川', 1175, 608);
+            ctx.fillText('境', 1177, 585);
+            ctx.fillText('川', 1177, 620);
             ctx.restore();
         }
 
