@@ -2485,18 +2485,24 @@ h<!DOCTYPE html>
         // ============================================
         function fixMapTextLabels(ctx) {
             // 境川: AI生成で文字が崩れている（約 x=1140-1190, y=575-655）
-            // 背景色で塗りつぶして正しいテキストを上書き
             ctx.save();
-            // 崩れた文字を背景色で隠す
-            ctx.fillStyle = '#DFD7CE'; // 地図の背景色 rgb(223,215,206)
-            ctx.fillRect(1115, 515, 120, 200);
-            // 正しい「境川」を縦書きで描画
-            ctx.font = 'bold 32px sans-serif';
-            ctx.fillStyle = '#2E7DB5'; // 地図上の川名の青色
+            // 崩れた文字エリアを周囲の水色で自然に隠す
+            ctx.fillStyle = 'rgb(201,220,241)';
+            ctx.fillRect(1125, 525, 100, 160);
+            // 正しい「境川」を縦書きで描画（白フチ付きで読みやすく）
+            ctx.font = 'bold 28px "Hiragino Sans", "Yu Gothic", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('境', 1175, 568);
-            ctx.fillText('川', 1175, 610);
+            // 白フチ（ストローク）
+            ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+            ctx.lineWidth = 4;
+            ctx.lineJoin = 'round';
+            ctx.strokeText('境', 1175, 575);
+            ctx.strokeText('川', 1175, 608);
+            // 本文（青色）
+            ctx.fillStyle = '#2E7DB5';
+            ctx.fillText('境', 1175, 575);
+            ctx.fillText('川', 1175, 608);
             ctx.restore();
         }
 
