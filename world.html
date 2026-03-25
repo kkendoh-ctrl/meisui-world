@@ -2066,8 +2066,18 @@ h<!DOCTYPE html>
             { x: 1350, y: 400 }, // maihama station
         ];
 
-        // Camera system
-        let camera = { x: MAP_W / 2, y: MAP_H / 2, zoom: 0.8, targetZoom: 0.8 };
+        // Camera system — fixed to show full map in one screen
+        // Zoom is calculated to fit MAP into canvas, camera stays centered
+        let camera = { x: MAP_W / 2, y: MAP_H / 2, zoom: 0.5, targetZoom: 0.5 };
+        function fitMapToScreen() {
+            const zoomX = W / MAP_W;
+            const zoomY = H / MAP_H;
+            const fitZoom = Math.min(zoomX, zoomY);
+            camera.zoom = fitZoom;
+            camera.targetZoom = fitZoom;
+            camera.x = MAP_W / 2;
+            camera.y = MAP_H / 2;
+        }
 
         // Particle system (cherry blossoms)
         let particles = [];
@@ -4113,8 +4123,10 @@ h<!DOCTYPE html>
             if (ambientPhase > 0.75) {
                 updateFireflies();
             }
-            // Camera smooth zoom
+            // Camera smooth zoom (position stays fixed at center)
             camera.zoom += (camera.targetZoom - camera.zoom) * 0.1;
+            camera.x = MAP_W / 2;
+            camera.y = MAP_H / 2;
 
             // Clear canvas with sky gradient
             const gradient = ctx.createLinearGradient(0, 0, 0, H);
@@ -4294,13 +4306,9 @@ h<!DOCTYPE html>
                 draggedChar = char;
                 draggedChar.state = 'idle';
                 draggedChar.stateTimer = 0;
-                canvas.style.cursor = 'move';
-            } else {
-                dragging = true;
                 canvas.style.cursor = 'grabbing';
             }
-            lastMx = e.clientX;
-            lastMy = e.clientY;
+            // Map panning disabled — only character drag works
         });
 
         canvas.addEventListener('mousemove', e => {
@@ -4308,12 +4316,8 @@ h<!DOCTYPE html>
                 const map = screenToMap(e.clientX, e.clientY);
                 draggedChar.x = map.x;
                 draggedChar.y = map.y;
-            } else if (dragging) {
-                camera.x -= (e.clientX - lastMx) / camera.zoom;
-                camera.y -= (e.clientY - lastMy) / camera.zoom;
-                lastMx = e.clientX;
-                lastMy = e.clientY;
             }
+            // Map panning disabled — fixed view
         });
 
         canvas.addEventListener('mouseup', () => {
@@ -4321,18 +4325,14 @@ h<!DOCTYPE html>
                 draggedChar = null;
             }
             dragging = false;
-            canvas.style.cursor = 'grab';
+            canvas.style.cursor = 'default';
         });
 
         canvas.addEventListener('wheel', e => {
             e.preventDefault();
-            const oldZoom = camera.targetZoom;
-            camera.targetZoom = Math.max(0.5, Math.min(2.5, camera.targetZoom * (e.deltaY > 0 ? 0.9 : 1.1)));
-
-            const mx = (e.clientX - W / 2) / oldZoom + camera.x;
-            const my = (e.clientY - H / 2) / oldZoom + camera.y;
-            camera.x = mx - (e.clientX - W / 2) / camera.targetZoom;
-            camera.y = my - (e.clientY - H / 2) / camera.targetZoom;
+            // Zoom only, camera stays centered
+            const fitZoom = Math.min(W / MAP_W, H / MAP_H);
+            camera.targetZoom = Math.max(fitZoom, Math.min(2.5, camera.targetZoom * (e.deltaY > 0 ? 0.9 : 1.1)));
         }, { passive: false });
 
         // Touch support for mobile
@@ -4364,12 +4364,8 @@ h<!DOCTYPE html>
                     const map = screenToMap(e.touches[0].clientX, e.touches[0].clientY);
                     draggedChar.x = map.x;
                     draggedChar.y = map.y;
-                } else if (dragging) {
-                    camera.x -= (e.touches[0].clientX - lastMx) / camera.zoom;
-                    camera.y -= (e.touches[0].clientY - lastMy) / camera.zoom;
-                    lastMx = e.touches[0].clientX;
-                    lastMy = e.touches[0].clientY;
                 }
+                // Map panning disabled — fixed view
             } else if (e.touches.length === 2) {
                 const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
                 if (lastTouchDist > 0) {
@@ -4504,6 +4500,7 @@ h<!DOCTYPE html>
         window.addEventListener('resize', () => {
             canvas.width = W = window.innerWidth;
             canvas.height = H = window.innerHeight - (window.innerWidth <= 768 ? 36 : 50);
+            fitMapToScreen();
         });
 
         // ============================================
@@ -5334,6 +5331,7 @@ h<!DOCTYPE html>
         initAchievements();
         initWelcome();
         document.getElementById('soundToggleBtn').addEventListener('click', toggleSound);
+        fitMapToScreen();
         animate();
 
         // ============================================
