@@ -1097,7 +1097,7 @@ h<!DOCTYPE html>
         <div style="flex-shrink:0;border-top:1px solid rgba(0,0,0,0.1);padding:4px 8px 6px;">
             <div style="display:flex;gap:4px;margin-bottom:4px;">
                 <button onclick="openRankPopup()" style="flex:1;font-size:11px;color:#fff;background:linear-gradient(135deg,#f7971e,#ffd200);border:none;padding:5px 0;border-radius:6px;cursor:pointer;font-weight:bold;">🏆 街ランク</button>
-                <button onclick="if(confirm('⚠️ 全データをリセットしますか？（投票・世界線・すべて初期化）')){votesRef.set({meisui:0,meisui_chan:0,tsutsuji:0,bekabune:0,asari:0,ryoushi:0});firebaseDb.ref('worldLineOffset').set(0);firebaseDb.ref('stats/cycleStartVotes').set(0);firebaseDb.ref('decorationOffset').set({meisui:0,tsutsuji:0,meisui_chan:0,bekabune:0,asari:0,ryoushi:0});endingActive=false;builtBuildings=[];localStorage.setItem('meisui_builtBuildings','[]');}" style="flex:1;font-size:11px;color:#fff;background:#78909c;border:none;padding:5px 0;border-radius:6px;cursor:pointer;font-weight:bold;">🔄 リセット</button>
+                <button onclick="if(confirm('⚠️ 全データをリセットしますか？（投票・世界線・すべて初期化）')){votesRef.set({meisui:0,meisui_chan:0,tsutsuji:0,bekabune:0,asari:0,ryoushi:0});firebaseDb.ref('worldLineOffset').set(0);firebaseDb.ref('stats/cycleStartVotes').set(0);firebaseDb.ref('stats/decorationOffset').set({meisui:0,tsutsuji:0,meisui_chan:0,bekabune:0,asari:0,ryoushi:0});endingActive=false;builtBuildings=[];localStorage.setItem('meisui_builtBuildings','[]');}" style="flex:1;font-size:11px;color:#fff;background:#78909c;border:none;padding:5px 0;border-radius:6px;cursor:pointer;font-weight:bold;">🔄 リセット</button>
             </div>
             <div style="display:flex;gap:3px;">
                 <button onclick="debugAddVotes(1)" style="flex:1;font-size:10px;color:#fff;background:#e53935;border:none;padding:4px 0;border-radius:5px;cursor:pointer;font-weight:bold;">+10年</button>
@@ -1817,6 +1817,9 @@ h<!DOCTYPE html>
 
             // Hard cooldown: minimum 60 seconds between events
             if (now < nextInteractionAllowed) return;
+
+            // モーダル/クイズ表示中はインタラクション抑制
+            if (window.voteInProgress || document.getElementById('voteModal')?.style.display !== 'none' || document.getElementById('quizModal')) return;
 
             // Check if any pair is close enough
             let triggered = false;
@@ -4487,7 +4490,8 @@ h<!DOCTYPE html>
         function debugAddVotes(count) {
             if (!confirm('デバッグ: ' + count + '票を一括追加しますか？')) return;
             const chars = ['meisui', 'tsutsuji', 'meisui_chan', 'bekabune', 'asari', 'ryoushi'];
-            // Use transaction to prevent race condition with concurrent votes
+            // イベント発火を抑制してフリーズを防ぐ
+            isInitialLoad = true;
             votesRef.transaction(current => {
                 if (!current) current = {};
                 for (let i = 0; i < count; i++) {
@@ -4496,8 +4500,12 @@ h<!DOCTYPE html>
                 }
                 return current;
             }).then(() => {
-                // Ending is checked in handleVoteSnapshot via queue
-            }).catch(err => console.error('Debug vote failed:', err));
+                // 1フレーム後にフラグ戻す（表示更新は済んでいる）
+                setTimeout(() => { isInitialLoad = false; }, 100);
+            }).catch(err => {
+                isInitialLoad = false;
+                console.error('Debug vote failed:', err);
+            });
         }
 
         // Zoom disabled — fixed screen
@@ -5034,7 +5042,7 @@ h<!DOCTYPE html>
 
         // Decoration offset: per-character vote offsets to reset trees/fish/buildings on world line change
         var decorationOffset = { meisui: 0, tsutsuji: 0, meisui_chan: 0, bekabune: 0, asari: 0, ryoushi: 0 };
-        firebaseDb.ref('decorationOffset').on('value', snap => {
+        firebaseDb.ref('stats/decorationOffset').on('value', snap => {
             const data = snap.val() || {};
             decorationOffset = {
                 meisui: data.meisui || 0,
@@ -5133,7 +5141,7 @@ h<!DOCTYPE html>
                 // Persist to Firebase
                 firebaseDb.ref('worldLineOffset').set(worldLineOffset);
                 firebaseDb.ref('stats/cycleStartVotes').set(cycleStartVotes);
-                firebaseDb.ref('decorationOffset').set(decorationOffset).catch(err => {
+                firebaseDb.ref('stats/decorationOffset').set(decorationOffset).catch(err => {
                     console.error('World line transition failed:', err);
                 });
 
