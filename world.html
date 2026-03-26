@@ -820,6 +820,35 @@ h<!DOCTYPE html>
             }
         }
 
+        /* ポケモン進化風エフェクト */
+        @keyframes evolutionFlash {
+            0% { opacity: 0; }
+            15% { opacity: 1; }
+            30% { opacity: 0.3; }
+            45% { opacity: 1; }
+            60% { opacity: 0.2; }
+            75% { opacity: 0.9; }
+            90% { opacity: 0.1; }
+            100% { opacity: 0; }
+        }
+        @keyframes evolutionGrow {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            30% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(0.95); }
+            70% { transform: translate(-50%, -50%) scale(1.05); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        @keyframes evolutionRing {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; border-width: 8px; }
+            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; border-width: 1px; }
+        }
+        @keyframes evolutionPopText {
+            0% { transform: translateX(-50%) scale(0.3); opacity: 0; }
+            40% { transform: translateX(-50%) scale(1.15); opacity: 1; }
+            60% { transform: translateX(-50%) scale(0.95); }
+            100% { transform: translateX(-50%) scale(1); opacity: 1; }
+        }
+
         .era-event-notification {
             position: fixed;
             top: 120px;
@@ -4661,6 +4690,13 @@ h<!DOCTYPE html>
             const wlEl = document.getElementById('worldLineText');
             if (yearEl) yearEl.textContent = year + '年';
             if (wlEl) wlEl.textContent = '第' + worldLine + '世界線';
+            // 埋め立て進化チェック（初回ロード時はスキップ）
+            if (!isInitialLoad) {
+                checkReclamationEvolution(year);
+            } else {
+                // 初回は現在段階を記録するだけ
+                lastReclamationStage = getReclamationStage(year);
+            }
             console.log(`📅 Year=${year} WL=${worldLine} | totalVotes=${totalVotes} cycleStart=${cycleStartVotes} effective=${getEffectiveVotes()} wlOffset=${worldLineOffset}`);
         }
 
@@ -4758,6 +4794,101 @@ h<!DOCTYPE html>
                 blackSea.style.opacity = '0';
                 setTimeout(() => blackSea.remove(), 1500);
             }, 6000);
+        }
+
+        // ========== 埋め立て進化エフェクト（ポケモン進化風） ==========
+        const reclamationStages = {
+            1969: { name: '中町エリア', areas: '東野・富岡・今川・海楽・美浜・入船' },
+            1979: { name: '舞浜・新町エリア', areas: '舞浜・日の出・明海・港・千鳥' },
+            1989: { name: '全域', areas: '高洲 — 浦安の埋め立て完了！' },
+        };
+        let lastReclamationStage = 0; // 前回の埋め立て段階（0/1969/1979/1989）
+
+        function getReclamationStage(year) {
+            if (year >= 1989) return 1989;
+            if (year >= 1979) return 1979;
+            if (year >= 1969) return 1969;
+            return 0;
+        }
+
+        function checkReclamationEvolution(newYear) {
+            const newStage = getReclamationStage(newYear);
+            if (newStage > lastReclamationStage && lastReclamationStage !== 0) {
+                // 段階が上がった → 進化エフェクト発動
+                const stageInfo = reclamationStages[newStage];
+                if (stageInfo) {
+                    showReclamationEvolution(stageInfo);
+                }
+            }
+            lastReclamationStage = newStage;
+        }
+
+        function showReclamationEvolution(stageInfo) {
+            // 1. 白フラッシュオーバーレイ（ポケモン進化の光）
+            const flash = document.createElement('div');
+            flash.style.cssText = `
+                position:fixed;top:0;left:0;width:100%;height:100%;z-index:450;
+                pointer-events:none;background:white;
+                animation:evolutionFlash 2s ease forwards;
+            `;
+            document.body.appendChild(flash);
+
+            // 2. 拡大リング（波紋エフェクト）
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const ring = document.createElement('div');
+                    ring.style.cssText = `
+                        position:fixed;top:50%;left:50%;width:200px;height:200px;
+                        border:8px solid rgba(100,200,255,0.8);border-radius:50%;
+                        z-index:451;pointer-events:none;
+                        animation:evolutionRing 1.5s ease-out forwards;
+                    `;
+                    document.body.appendChild(ring);
+                    setTimeout(() => ring.remove(), 1500);
+                }, i * 400);
+            }
+
+            // 3. 「ぐんぐん大きくなる」テキスト
+            const growText = document.createElement('div');
+            growText.style.cssText = `
+                position:fixed;top:50%;left:50%;z-index:452;pointer-events:none;
+                font-size:64px;font-weight:900;color:white;
+                text-shadow:0 0 20px rgba(100,200,255,1), 0 0 40px rgba(100,200,255,0.5);
+                font-family:sans-serif;
+                animation:evolutionGrow 1.5s ease forwards;
+            `;
+            growText.textContent = '🌊 ぐんぐん！';
+            document.body.appendChild(growText);
+
+            // 4. フラッシュ終了後にポップ表示
+            setTimeout(() => {
+                flash.remove();
+                growText.remove();
+
+                const popup = document.createElement('div');
+                popup.style.cssText = `
+                    position:fixed;top:40%;left:50%;z-index:453;pointer-events:none;
+                    background:linear-gradient(135deg, #1a237e, #0d47a1);
+                    color:white;padding:30px 50px;border-radius:20px;
+                    text-align:center;font-family:sans-serif;
+                    border:4px solid #64b5f6;
+                    box-shadow:0 10px 40px rgba(0,100,255,0.5);
+                    animation:evolutionPopText 0.6s ease forwards;
+                `;
+                popup.innerHTML = `
+                    <div style="font-size:48px;margin-bottom:10px;">🏗️</div>
+                    <div style="font-size:28px;font-weight:bold;margin-bottom:8px;">埋め立てで「${stageInfo.name}」ができた！</div>
+                    <div style="font-size:16px;color:#90caf9;">${stageInfo.areas}</div>
+                `;
+                document.body.appendChild(popup);
+
+                setTimeout(() => {
+                    popup.style.transition = 'opacity 0.8s, transform 0.8s';
+                    popup.style.opacity = '0';
+                    popup.style.transform = 'translateX(-50%) translateY(-30px)';
+                    setTimeout(() => popup.remove(), 800);
+                }, 3500);
+            }, 2000);
         }
 
         // Listen for real-time vote updates from Firebase
