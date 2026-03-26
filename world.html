@@ -4659,9 +4659,9 @@ h<!DOCTYPE html>
         const START_YEAR = 1889;
         const END_YEAR = 2100;
         const YEARS_PER_VOTE = 10;
-        // 22票で2100年到達: 0票=1889, 1票=1899, ..., 21票=2099, 22票=2100(エンディング)
-        // 23票以上も2100年で固定。世界線ボタンを押してworldLineOffset+1すると1889年に戻る
-        const VOTES_PER_CYCLE = 23;
+        // 22票で1周: 0票=1889, ..., 20票=2089, 21票=2100(エンディング)
+        // 22票以上も2100年固定。世界線ボタンでworldLineOffset+1→1889年に戻る
+        const VOTES_PER_CYCLE = 22;
 
         function getEffectiveVotes() {
             // worldLineOffset分のサイクルを差し引いて、現在のサイクル内の票数を計算
@@ -4671,8 +4671,8 @@ h<!DOCTYPE html>
 
         function getCurrentYear() {
             const effective = getEffectiveVotes();
-            // 22票以上は2100年で固定（ボタンで世界線移行するまで）
-            if (effective >= 22) return END_YEAR;
+            // 21票以上は2100年で固定（ボタンで世界線移行するまで）
+            if (effective >= 21) return END_YEAR;
             return START_YEAR + effective * YEARS_PER_VOTE;
         }
 
@@ -4682,7 +4682,7 @@ h<!DOCTYPE html>
 
         function isEndingTrigger() {
             const effective = getEffectiveVotes();
-            return effective === 22; // ちょうど22票目でエンディング発火
+            return effective === 21; // 21票目=2100年でエンディング発火
         }
 
         function updateYearDisplay() {
@@ -4716,7 +4716,6 @@ h<!DOCTYPE html>
             2049: {text: '葛西に橋が架かった！', emoji: '🌉'},
             2069: {text: '浦安↔新浦安 ロープウェイ開通！', emoji: '🚡'},
             2089: {text: '海上都市計画 始動！', emoji: '🏙️'},
-            2099: {text: '未来都市うらやす 完成間近！', emoji: '🌟'},
         };
 
         function showEraEvent(year) {
