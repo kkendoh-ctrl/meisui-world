@@ -4661,8 +4661,8 @@ h<!DOCTYPE html>
         const START_YEAR = 1889;
         const END_YEAR = 2100;
         const YEARS_PER_VOTE = 10;
-        // 22票で1周: 0票=1889, 1票=1899, ..., 20票=2089, 21票=2100, 22票→1889(次の世界線)
-        const VOTES_PER_CYCLE = 22;
+        // 23票で1周: 0票=1889, 1票=1899, ..., 20票=2089, 21票=2099, 22票=2100(エンディング), 23票→次の世界線
+        const VOTES_PER_CYCLE = 23;
 
         function getEffectiveVotes() {
             // worldLineOffset分のサイクルを差し引いて、現在のサイクル内の票数を計算
@@ -4671,9 +4671,9 @@ h<!DOCTYPE html>
 
         function getCurrentYear() {
             const effective = getEffectiveVotes();
-            const votesInCycle = ((effective % VOTES_PER_CYCLE) + VOTES_PER_CYCLE) % VOTES_PER_CYCLE; // 負の数対策
-            if (votesInCycle >= 21) return END_YEAR;
-            return START_YEAR + votesInCycle * YEARS_PER_VOTE;
+            const votesInCycle = ((effective % VOTES_PER_CYCLE) + VOTES_PER_CYCLE) % VOTES_PER_CYCLE;
+            if (votesInCycle >= 22) return END_YEAR; // 22票=2100年エンディング
+            return START_YEAR + votesInCycle * YEARS_PER_VOTE; // 21票=2099年
         }
 
         function getWorldLine() {
@@ -4683,7 +4683,7 @@ h<!DOCTYPE html>
         function isEndingTrigger() {
             const effective = getEffectiveVotes();
             const votesInCycle = ((effective % VOTES_PER_CYCLE) + VOTES_PER_CYCLE) % VOTES_PER_CYCLE;
-            return votesInCycle === 21;
+            return votesInCycle === 22; // 22票目=2100年でエンディング
         }
 
         function updateYearDisplay() {
@@ -4717,6 +4717,7 @@ h<!DOCTYPE html>
             2049: {text: '葛西に橋が架かった！', emoji: '🌉'},
             2069: {text: '浦安↔新浦安 ロープウェイ開通！', emoji: '🚡'},
             2089: {text: '海上都市計画 始動！', emoji: '🏙️'},
+            2099: {text: '未来都市うらやす 完成間近！', emoji: '🌟'},
         };
 
         function showEraEvent(year) {
@@ -4749,7 +4750,7 @@ h<!DOCTYPE html>
             setTimeout(() => {
                 overlay.style.transition = 'opacity 0.5s';
                 overlay.style.opacity = '0';
-                setTimeout(() => overlay.remove(), 500);
+                setTimeout(() => { overlay.remove(); onEventDone(); }, 500);
             }, 3000);
         }
 
@@ -4833,6 +4834,37 @@ h<!DOCTYPE html>
             ryoushi: { name: '漁師めいすいくん', color: '#66bb6a' }
         };
 
+        // ============================================
+        // Event Queue System — show events sequentially after quiz
+        // ============================================
+        const eventQueue = [];
+        let eventQueuePlaying = false;
+
+        function queueEvent(showFn) {
+            eventQueue.push(showFn);
+        }
+
+        function playEventQueue() {
+            if (eventQueuePlaying || eventQueue.length === 0) return;
+            eventQueuePlaying = true;
+            playNextEvent();
+        }
+
+        function playNextEvent() {
+            if (eventQueue.length === 0) {
+                eventQueuePlaying = false;
+                return;
+            }
+            const showFn = eventQueue.shift();
+            // Each showFn should call onEventDone() when its display is finished
+            showFn();
+        }
+
+        function onEventDone() {
+            // Small gap between events
+            setTimeout(() => playNextEvent(), 500);
+        }
+
         function openVoteModal() {
             if (window.voteInProgress) return;
             const profileCard = document.getElementById('charProfileCard');
@@ -4866,10 +4898,10 @@ h<!DOCTYPE html>
                 firebaseDb.ref('stats/lastVoteTime').set(Date.now());
                 firebaseDb.ref('stats/totalVoteCount').transaction(current => (current || 0) + 1);
 
-                // Check for era event after Firebase updates local votes
+                // Queue era event (will show after quiz)
                 const newYear = getCurrentYear();
                 if (historicalEvents[newYear]) {
-                    setTimeout(() => showEraEvent(newYear), 1500);
+                    queueEvent(() => showEraEvent(newYear));
                 }
 
                 // Ending check is in handleVoteSnapshot (fires after local votes update)
@@ -4951,15 +4983,15 @@ h<!DOCTYPE html>
             // V3 Features: Check event trigger
             checkEventTrigger();
 
-            // V3 Features: Check for level changes
+            // V3 Features: Check for level changes (queued, shown after quiz)
             const oldLevel = getCurrentLevel();
+            // Defer level check to after Firebase updates local votes
             setTimeout(() => {
                 const newLevel = getCurrentLevel();
                 if (newLevel.min > oldLevel.min) {
-                    showLevelUpAnimation(newLevel);
-                    playSound('levelup');
+                    queueEvent(() => { showLevelUpAnimation(newLevel); playSound('levelup'); });
                 }
-            }, 5500);
+            }, 1000);
 
             // Show quiz after cutin(2.7s) + certificate(3s) + buffer
             setTimeout(() => {
@@ -5157,19 +5189,23 @@ h<!DOCTYPE html>
                 animation:voteBtnPulse 2s ease-in-out infinite;
             `;
             btn.onclick = function() {
+                console.log('🌀 World line button clicked! Current WL:', getWorldLine());
                 btn.remove();
                 // Clean up any remaining fireworks interval
                 if (activeFwInterval) { clearInterval(activeFwInterval); activeFwInterval = null; }
-                // Save decoration offset first, then increment world line
-                firebaseDb.ref('decorationOffset').set({
-                    meisui: votes.meisui || 0,
-                    tsutsuji: votes.tsutsuji || 0,
-                    meisui_chan: votes.meisui_chan || 0,
-                    bekabune: votes.bekabune || 0,
-                    asari: votes.asari || 0,
-                    ryoushi: votes.ryoushi || 0
+                // Increment world line first (simple transaction), then save decoration offset
+                firebaseDb.ref('worldLineOffset').transaction(current => (current || 0) + 1).then(() => {
+                    console.log('✅ worldLineOffset incremented');
+                    return firebaseDb.ref('decorationOffset').set({
+                        meisui: votes.meisui || 0,
+                        tsutsuji: votes.tsutsuji || 0,
+                        meisui_chan: votes.meisui_chan || 0,
+                        bekabune: votes.bekabune || 0,
+                        asari: votes.asari || 0,
+                        ryoushi: votes.ryoushi || 0
+                    });
                 }).then(() => {
-                    return firebaseDb.ref('worldLineOffset').transaction(current => (current || 0) + 1);
+                    console.log('✅ decorationOffset saved');
                 }).catch(err => {
                     console.error('World line transition failed:', err);
                 });
@@ -5785,7 +5821,11 @@ h<!DOCTYPE html>
             setTimeout(() => {
                 card.style.opacity = '0';
                 card.style.transition = 'opacity 0.5s';
-                setTimeout(() => card.remove(), 500);
+                setTimeout(() => {
+                    card.remove();
+                    // Play queued events after quiz flow is fully done
+                    playEventQueue();
+                }, 500);
             }, 6000);
         }
 
@@ -5804,7 +5844,7 @@ h<!DOCTYPE html>
                 if (prevVotes < building.unlock_votes && adjustedTotal >= building.unlock_votes && !builtBuildings.includes(building.id)) {
                     builtBuildings.push(building.id);
                     localStorage.setItem('meisui_builtBuildings', JSON.stringify(builtBuildings));
-                    showBuildingNotification(building);
+                    queueEvent(() => showBuildingNotification(building));
                 }
             });
         }
@@ -5838,7 +5878,7 @@ h<!DOCTYPE html>
             setTimeout(() => {
                 notif.style.opacity = '0';
                 notif.style.transition = 'opacity 0.5s';
-                setTimeout(() => notif.remove(), 500);
+                setTimeout(() => { notif.remove(); onEventDone(); }, 500);
             }, 3000);
         }
 
@@ -5867,7 +5907,7 @@ h<!DOCTYPE html>
             if (allEvents.length === 0) return;
             
             const event = allEvents[Math.floor(Math.random() * allEvents.length)];
-            showEventPopup(event);
+            queueEvent(() => showEventPopup(event));
         }
         
         function canTriggerEvent(event) {
@@ -5917,7 +5957,7 @@ h<!DOCTYPE html>
             setTimeout(() => {
                 popup.style.opacity = '0';
                 popup.style.transition = 'opacity 0.5s';
-                setTimeout(() => popup.remove(), 500);
+                setTimeout(() => { popup.remove(); onEventDone(); }, 500);
             }, 4000);
         }
 
@@ -5951,7 +5991,7 @@ h<!DOCTYPE html>
             `;
             document.body.appendChild(anim);
             
-            setTimeout(() => anim.remove(), 3000);
+            setTimeout(() => { anim.remove(); onEventDone(); }, 3000);
         }
 
     </script>
