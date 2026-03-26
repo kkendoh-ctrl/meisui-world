@@ -4544,9 +4544,7 @@ h<!DOCTYPE html>
                 }
                 return current;
             }).then(() => {
-                if (isEndingTrigger() && typeof showEnding === 'function') {
-                    setTimeout(() => showEnding(), 2000);
-                }
+                // Ending is checked in handleVoteSnapshot via queue
             }).catch(err => console.error('Debug vote failed:', err));
         }
 
@@ -4809,9 +4807,14 @@ h<!DOCTYPE html>
                 const decoTotal = Object.values(decorationOffset || {}).reduce((a, b) => a + b, 0);
                 checkBuildingUnlock(totalVotes - decoTotal - 1);
             }
-            // Check ending (endingActive flag in showEnding() prevents double-firing)
-            if (isEndingTrigger() && typeof showEnding === 'function') {
-                setTimeout(() => showEnding(), 2000);
+            // Queue ending after all other events (endingActive flag prevents double-firing)
+            if (isEndingTrigger() && typeof showEnding === 'function' && !endingActive) {
+                queueEvent(() => showEnding());
+            }
+
+            // If no quiz is active, play queued events immediately
+            if (!window.voteInProgress && eventQueue.length > 0 && !eventQueuePlaying) {
+                setTimeout(() => playEventQueue(), 500);
             }
         }
         function attachVoteListener() {
