@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "meisui-world",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8080", "--directory", "C:/Users/monum/Documents/meisui-world"],
+      "port": 8080
+    }
+  ]
+}
