@@ -4659,20 +4659,21 @@ h<!DOCTYPE html>
         const START_YEAR = 1889;
         const END_YEAR = 2100;
         const YEARS_PER_VOTE = 10;
-        // 22票で1周: 0票=1889, ..., 20票=2089, 21票=2100(エンディング)
-        // 22票以上も2100年固定。世界線ボタンでworldLineOffset+1→1889年に戻る
-        const VOTES_PER_CYCLE = 22;
+        // 21票で2100年到達(エンディング)。21票以上は2100年固定。
+        // 世界線ボタン押下でcycleStartVotes=現在の票数に設定→effective=0→1889年に戻る
+        const VOTES_PER_CYCLE = 22; // 世界線ボタン表示等の参考値（年計算には使わない）
+
+        // cycleStartVotes: この世界線が始まった時点の累計票数（Firebase保存）
+        // 世界線ボタン押下時に現在のtotalVotesを保存する
+        var cycleStartVotes = 0;
 
         function getEffectiveVotes() {
-            // worldLineOffset分のサイクルを差し引いて、現在のサイクル内の票数を計算
-            // modulo不使用: 22票以上は2100年で固定、世界線ボタンでのみリセット
-            return Math.max(0, totalVotes - (worldLineOffset || 0) * VOTES_PER_CYCLE);
+            return Math.max(0, totalVotes - cycleStartVotes);
         }
 
         function getCurrentYear() {
             const effective = getEffectiveVotes();
-            // 21票以上は2100年で固定（ボタンで世界線移行するまで）
-            if (effective >= 21) return END_YEAR;
+            if (effective >= 21) return END_YEAR; // 21票以上は2100年固定
             return START_YEAR + effective * YEARS_PER_VOTE;
         }
 
@@ -4682,7 +4683,7 @@ h<!DOCTYPE html>
 
         function isEndingTrigger() {
             const effective = getEffectiveVotes();
-            return effective === 21; // 21票目=2100年でエンディング発火
+            return effective === 21; // 21票目=2100年でエンディング
         }
 
         function updateYearDisplay() {
@@ -5147,6 +5148,20 @@ h<!DOCTYPE html>
             updateYearDisplay();
         });
 
+        // cycleStartVotes: この世界線が始まった時の累計票数
+        firebaseDb.ref('cycleStartVotes').on('value', snap => {
+            const saved = snap.val();
+            if (saved === null && worldLineOffset > 0 && totalVotes > 0) {
+                // Migration: cycleStartVotesが未設定の場合、現在の票数で初期化
+                // （旧VOTES_PER_CYCLEベースのデータからの移行）
+                cycleStartVotes = totalVotes;
+                firebaseDb.ref('cycleStartVotes').set(cycleStartVotes);
+            } else {
+                cycleStartVotes = saved || 0;
+            }
+            updateYearDisplay();
+        });
+
         // Decoration offset: per-character vote offsets to reset trees/fish/buildings on world line change
         var decorationOffset = { meisui: 0, tsutsuji: 0, meisui_chan: 0, bekabune: 0, asari: 0, ryoushi: 0 };
         firebaseDb.ref('decorationOffset').on('value', snap => {
@@ -5199,6 +5214,7 @@ h<!DOCTYPE html>
 
                 // Immediate local update (don't wait for Firebase roundtrip)
                 worldLineOffset = (worldLineOffset || 0) + 1;
+                cycleStartVotes = totalVotes; // 現在の票数を新世界線の起点にする
                 decorationOffset = {
                     meisui: votes.meisui || 0,
                     tsutsuji: votes.tsutsuji || 0,
@@ -5212,6 +5228,7 @@ h<!DOCTYPE html>
 
                 // Persist to Firebase
                 firebaseDb.ref('worldLineOffset').set(worldLineOffset);
+                firebaseDb.ref('cycleStartVotes').set(cycleStartVotes);
                 firebaseDb.ref('decorationOffset').set(decorationOffset).catch(err => {
                     console.error('World line transition failed:', err);
                 });
