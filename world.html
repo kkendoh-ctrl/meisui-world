@@ -808,6 +808,11 @@ h<!DOCTYPE html>
         }
 
         /* Era Event Notification */
+        @keyframes blackDrop {
+            0% { transform: translateY(0); opacity: 0.8; }
+            100% { transform: translateY(-60vh); opacity: 0; }
+        }
+
         @keyframes eraEventPop {
             0% {
                 transform: scale(0) translateY(-20px);
@@ -2811,12 +2816,12 @@ h<!DOCTYPE html>
             const COASTLINE_Y = 780; // South coastline on the actual Urayasu map
             const WATER_START_Y = 800; // Where water begins
 
-            const vM = votes.meisui || 0;
-            const vT = votes.tsutsuji || 0;
-            const vV = votes.meisui_chan || 0;
-            const vU = votes.bekabune || 0;
-            const vA = votes.asari || 0;
-            const vR = votes.ryoushi || 0;
+            const vM = Math.max(0, (votes.meisui || 0) - (decorationOffset.meisui || 0));
+            const vT = Math.max(0, (votes.tsutsuji || 0) - (decorationOffset.tsutsuji || 0));
+            const vV = Math.max(0, (votes.meisui_chan || 0) - (decorationOffset.meisui_chan || 0));
+            const vU = Math.max(0, (votes.bekabune || 0) - (decorationOffset.bekabune || 0));
+            const vA = Math.max(0, (votes.asari || 0) - (decorationOffset.asari || 0));
+            const vR = Math.max(0, (votes.ryoushi || 0) - (decorationOffset.ryoushi || 0));
 
             // ========== 1. めいすいくん → イチョウ並木・黄金の紅葉 ==========
             if (vM > 0) {
@@ -3890,7 +3895,7 @@ h<!DOCTYPE html>
             // Vote bonus scaling and glow
             const voteBonus = votes[char.type] || 0;
             const voteScale = 1 + Math.min(voteBonus * 0.02, 0.5); // Up to 50% bigger
-            const baseSize = char.type === 'tsutsuji' ? 240 : 160;
+            const baseSize = char.type === 'tsutsuji' ? 168 : 160; // tsutsuji: 240*0.7=168
             const size = baseSize * voteScale;
             const aspect = img.naturalWidth / img.naturalHeight;
             const w = size * aspect;
@@ -4461,7 +4466,7 @@ h<!DOCTYPE html>
                 const char = characters[i];
                 const dx = char.x - mapX;
                 const dy = char.y - mapY;
-                const charSize = (char.type === 'tsutsuji' ? 240 : 160) / 2;
+                const charSize = (char.type === 'tsutsuji' ? 168 : 160) / 2;
                 if (Math.abs(dx) < charSize && Math.abs(dy) < charSize) {
                     return char;
                 }
@@ -4720,6 +4725,7 @@ h<!DOCTYPE html>
         const historicalEvents = {
             1889: {text: '浦安村 誕生', emoji: '🏘️'},
             1909: {text: '浦安町に昇格', emoji: '🏛️'},
+            1949: {text: '黒い水事件 — 工場排水で海が汚染された…', emoji: '🖤', special: 'blackWater'},
             1962: {text: '漁業権の一部を放棄', emoji: '🐟'},
             1964: {text: '海面埋め立て事業 開始！', emoji: '🏗️'},
             1968: {text: '東野・富岡・今川 誕生', emoji: '🌊'},
@@ -4750,21 +4756,64 @@ h<!DOCTYPE html>
                 background:rgba(0,0,0,0.85);color:white;padding:20px 40px;
                 border-radius:16px;z-index:400;text-align:center;
                 font-family:sans-serif;animation:eraEventPop 0.4s ease;
-                border:3px solid #ffd700;box-shadow:0 8px 30px rgba(0,0,0,0.5);
+                border:3px solid ${event.special === 'blackWater' ? '#333' : '#ffd700'};
+                box-shadow:0 8px 30px rgba(0,0,0,0.5);
                 max-width:500px;
             `;
             overlay.innerHTML = `
                 <div style="font-size:48px;margin-bottom:8px;">${event.emoji}</div>
-                <div style="font-size:14px;color:#ffd700;margin-bottom:4px;">${year}年</div>
+                <div style="font-size:14px;color:${event.special === 'blackWater' ? '#888' : '#ffd700'};margin-bottom:4px;">${year}年</div>
                 <div style="font-size:22px;font-weight:bold;">${event.text}</div>
             `;
             document.body.appendChild(overlay);
+
+            // Special: Black Water Incident — sea turns black
+            if (event.special === 'blackWater') {
+                showBlackWaterEffect();
+            }
 
             setTimeout(() => {
                 overlay.style.transition = 'opacity 0.5s';
                 overlay.style.opacity = '0';
                 setTimeout(() => overlay.remove(), 500);
             }, 3000);
+        }
+
+        // Black Water Incident effect: sea area turns dark/black temporarily
+        function showBlackWaterEffect() {
+            const blackSea = document.createElement('div');
+            blackSea.style.cssText = `
+                position:fixed;top:0;left:0;width:100%;height:100%;z-index:300;
+                pointer-events:none;opacity:0;
+                background:linear-gradient(to top, rgba(10,5,0,0.85) 0%, rgba(20,10,5,0.6) 40%, transparent 70%);
+                transition:opacity 1.5s ease;
+            `;
+            document.body.appendChild(blackSea);
+
+            // Fade in
+            requestAnimationFrame(() => {
+                blackSea.style.opacity = '1';
+            });
+
+            // Add dripping black particles
+            const particleInterval = setInterval(() => {
+                const drop = document.createElement('div');
+                const x = Math.random() * 100;
+                drop.style.cssText = `
+                    position:fixed;left:${x}%;bottom:0;width:6px;height:6px;
+                    background:rgba(20,10,5,0.8);border-radius:50%;z-index:301;
+                    pointer-events:none;animation:blackDrop 2s ease-in forwards;
+                `;
+                document.body.appendChild(drop);
+                setTimeout(() => drop.remove(), 2000);
+            }, 100);
+
+            // Fade out after 6 seconds
+            setTimeout(() => {
+                clearInterval(particleInterval);
+                blackSea.style.opacity = '0';
+                setTimeout(() => blackSea.remove(), 1500);
+            }, 6000);
         }
 
         // Listen for real-time vote updates from Firebase
@@ -4782,7 +4831,8 @@ h<!DOCTYPE html>
             updateVoteDisplay();
             updateYearDisplay();
             if (typeof checkBuildingUnlock === 'function') {
-                checkBuildingUnlock(totalVotes - 1);
+                const decoTotal = Object.values(decorationOffset || {}).reduce((a, b) => a + b, 0);
+                checkBuildingUnlock(totalVotes - decoTotal - 1);
             }
             // Check ending from any source (including debug buttons)
             if (isEndingTrigger() && typeof showEnding === 'function') {
@@ -5074,6 +5124,23 @@ h<!DOCTYPE html>
             updateYearDisplay();
         });
 
+        // Decoration offset: per-character vote offsets to reset trees/fish/buildings on world line change
+        var decorationOffset = { meisui: 0, tsutsuji: 0, meisui_chan: 0, bekabune: 0, asari: 0, ryoushi: 0 };
+        firebaseDb.ref('decorationOffset').on('value', snap => {
+            const data = snap.val() || {};
+            decorationOffset = {
+                meisui: data.meisui || 0,
+                tsutsuji: data.tsutsuji || 0,
+                meisui_chan: data.meisui_chan || 0,
+                bekabune: data.bekabune || 0,
+                asari: data.asari || 0,
+                ryoushi: data.ryoushi || 0
+            };
+            // Reset built buildings when decoration offset changes
+            builtBuildings = [];
+            localStorage.setItem('meisui_builtBuildings', '[]');
+        });
+
         function showNextWorldLineButton() {
             const existing = document.getElementById('nextWorldLineBtn');
             if (existing) existing.remove();
@@ -5104,6 +5171,18 @@ h<!DOCTYPE html>
                 btn.remove();
                 // Increment world line offset (no vote change)
                 firebaseDb.ref('worldLineOffset').transaction(current => (current || 0) + 1);
+                // Save current votes as decoration offset (reset trees/fish/buildings visually)
+                firebaseDb.ref('decorationOffset').set({
+                    meisui: votes.meisui || 0,
+                    tsutsuji: votes.tsutsuji || 0,
+                    meisui_chan: votes.meisui_chan || 0,
+                    bekabune: votes.bekabune || 0,
+                    asari: votes.asari || 0,
+                    ryoushi: votes.ryoushi || 0
+                });
+                // Reset built buildings
+                builtBuildings = [];
+                localStorage.setItem('meisui_builtBuildings', '[]');
                 endingActive = false;
                 playSound('vote');
             };
@@ -5197,7 +5276,7 @@ h<!DOCTYPE html>
                 charDiv.style.cssText = 'position:absolute;right:-120%;top:-15%;width:120%;height:130%;z-index:4;animation:cutinCharSlide 0.4s 0.2s cubic-bezier(0.16,1,0.3,1) forwards;opacity:0;display:flex;align-items:center;justify-content:center;overflow:visible;';
                 const img = document.createElement('img');
                 img.src = charImg.src;
-                img.style.cssText = 'max-width:300%;max-height:300%;filter:drop-shadow(0 0 60px ' + charColor + ') drop-shadow(0 0 120px ' + charColor + ') drop-shadow(0 0 200px white);animation:cutinCharKira 0.6s ease-in-out infinite alternate;';
+                img.style.cssText = 'max-width:1200%;max-height:1200%;filter:drop-shadow(0 0 60px ' + charColor + ') drop-shadow(0 0 120px ' + charColor + ') drop-shadow(0 0 200px white);animation:cutinCharKira 0.6s ease-in-out infinite alternate;';
                 charDiv.appendChild(img);
                 overlay.appendChild(charDiv);
             }
@@ -5719,8 +5798,10 @@ h<!DOCTYPE html>
         let builtBuildings = JSON.parse(localStorage.getItem('meisui_builtBuildings') || '[]');
         
         function checkBuildingUnlock(prevVotes) {
+            const decoTotal = Object.values(decorationOffset || {}).reduce((a, b) => a + b, 0);
+            const adjustedTotal = totalVotes - decoTotal;
             buildingsList.forEach(building => {
-                if (prevVotes < building.unlock_votes && totalVotes >= building.unlock_votes && !builtBuildings.includes(building.id)) {
+                if (prevVotes < building.unlock_votes && adjustedTotal >= building.unlock_votes && !builtBuildings.includes(building.id)) {
                     builtBuildings.push(building.id);
                     localStorage.setItem('meisui_builtBuildings', JSON.stringify(builtBuildings));
                     showBuildingNotification(building);
