@@ -4203,6 +4203,59 @@ h<!DOCTYPE html>
             }
         }
 
+        // ========== SEA OVERLAY FOR RECLAMATION ==========
+        function drawSeaOverlay(ctx, currentYear) {
+            // Find the right land polygon for current year
+            let landPoly = eraLandPolygons[1889];
+            for (let i = sortedEraYears.length - 1; i >= 0; i--) {
+                if (currentYear >= sortedEraYears[i]) {
+                    landPoly = eraLandPolygons[sortedEraYears[i]];
+                    break;
+                }
+            }
+
+            ctx.save();
+            ctx.beginPath();
+            // Outer rect (full map) - clockwise
+            ctx.rect(0, 0, MAP_W, MAP_H);
+            // Inner land polygon (counter-clockwise = hole)
+            ctx.moveTo(landPoly[0][0], landPoly[0][1]);
+            for (let i = landPoly.length - 1; i >= 0; i--) {
+                ctx.lineTo(landPoly[i][0], landPoly[i][1]);
+            }
+            ctx.closePath();
+            // Semi-transparent sea blue
+            ctx.fillStyle = 'rgba(30, 100, 180, 0.55)';
+            ctx.fill('evenodd');
+
+            // Wave pattern for visual texture
+            const t = Date.now() * 0.001;
+            ctx.globalAlpha = 0.15;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            for (let wy = 50; wy < MAP_H; wy += 80) {
+                ctx.beginPath();
+                for (let wx = 0; wx < MAP_W; wx += 5) {
+                    const y = wy + Math.sin(wx * 0.02 + t + wy * 0.1) * 8;
+                    if (wx === 0) ctx.moveTo(wx, y);
+                    else ctx.lineTo(wx, y);
+                }
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Era label
+            ctx.font = 'bold 22px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+            ctx.lineWidth = 3;
+            ctx.strokeText(currentYear + '年の浦安', MAP_W / 2, MAP_H - 30);
+            ctx.fillText(currentYear + '年の浦安', MAP_W / 2, MAP_H - 30);
+
+            ctx.restore();
+        }
+
         // ========== ERA-BASED LAND POLYGONS ==========
         const eraLandPolygons = {
             // 1889-1963: Just the old fishing village (元町 only)
@@ -4282,59 +4335,15 @@ h<!DOCTYPE html>
 
             // Draw map based on current year
             const currentYear = getCurrentYear();
-            if (currentYear >= 2026 && mapImage && mapImage.complete) {
-                // Modern era: use real map image
+            // Always draw real map image
+            if (mapImage && mapImage.complete) {
                 ctx.drawImage(mapImage, 0, 0, MAP_W, MAP_H);
-                // Fix garbled AI-generated text on the map image
                 fixMapTextLabels(ctx);
-                // 海の装飾アニメーション
                 drawOceanDecorations(ctx, Date.now());
-            } else {
-                // Historical era: draw simplified map
-                // Ocean background
-                ctx.fillStyle = '#5B9BD5';
-                ctx.fillRect(0, 0, MAP_W, MAP_H);
-
-                // Find the right polygon for current year
-                let landPoly = eraLandPolygons[1889]; // default
-                const eraYears = sortedEraYears;
-                for (let i = eraYears.length - 1; i >= 0; i--) {
-                    if (currentYear >= eraYears[i]) {
-                        landPoly = eraLandPolygons[eraYears[i]];
-                        break;
-                    }
-                }
-
-                // Draw land
-                ctx.fillStyle = '#8FBC8F';
-                ctx.beginPath();
-                ctx.moveTo(landPoly[0][0], landPoly[0][1]);
-                for (let i = 1; i < landPoly.length; i++) {
-                    ctx.lineTo(landPoly[i][0], landPoly[i][1]);
-                }
-                ctx.closePath();
-                ctx.fill();
-
-                // Draw border
-                ctx.strokeStyle = '#5B7B5B';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-
-                // Draw 旧江戸川 river on west side
-                ctx.strokeStyle = '#4A8AC7';
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.moveTo(490, 50);
-                ctx.lineTo(480, 200);
-                ctx.lineTo(470, 400);
-                ctx.lineTo(460, 600);
-                ctx.stroke();
-
-                // Era label on the map
-                ctx.font = 'bold 20px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillStyle = 'rgba(255,255,255,0.7)';
-                ctx.fillText(currentYear + '年の浦安', MAP_W / 2, MAP_H - 30);
+            }
+            // Sea overlay for pre-reclamation eras
+            if (currentYear < 1989) {
+                drawSeaOverlay(ctx, currentYear);
             }
 
             // For future years (after 2026), draw easter egg elements on top of map
