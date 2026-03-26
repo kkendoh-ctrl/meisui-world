@@ -5122,6 +5122,40 @@ h<!DOCTYPE html>
                 updateYearDisplay();
                 updateVoteDisplay();
 
+                // Save finished world line's rank data to Firebase
+                // (worldLineOffset was already +1, so finished WL display number = worldLineOffset)
+                const finishedWLDisplay = worldLineOffset; // e.g. was WL11, now offset=11, display=11
+                const rankInfo = getOverallRank();
+                const wlRecord = {
+                    worldLine: finishedWLDisplay,
+                    rank: rankInfo.current.rank,
+                    title: rankInfo.current.title,
+                    star: rankInfo.current.star,
+                    totalVotesAtEnd: totalVotes,
+                    votes: {
+                        meisui: votes.meisui || 0,
+                        tsutsuji: votes.tsutsuji || 0,
+                        meisui_chan: votes.meisui_chan || 0,
+                        bekabune: votes.bekabune || 0,
+                        asari: votes.asari || 0,
+                        ryoushi: votes.ryoushi || 0
+                    },
+                    areas: {},
+                    timestamp: Date.now()
+                };
+                areaRanks.forEach(area => {
+                    const lv = getAreaLevel(area.key);
+                    wlRecord.areas[area.key] = {
+                        name: area.name,
+                        level: lv,
+                        levelName: area.levels[lv],
+                        votes: votes[area.key] || 0
+                    };
+                });
+                firebaseDb.ref('stats/worldLineHistory/' + finishedWLDisplay).set(wlRecord).catch(err => {
+                    console.error('Failed to save world line history:', err);
+                });
+
                 // Persist to Firebase
                 firebaseDb.ref('worldLineOffset').set(worldLineOffset);
                 firebaseDb.ref('stats/cycleStartVotes').set(cycleStartVotes);
@@ -5507,11 +5541,52 @@ h<!DOCTYPE html>
                 html += '</div>';
             });
 
+            // 過去の世界線の記録
+            html += '<div style="font-size:14px;font-weight:bold;color:#555;margin:18px 0 10px;">🌀 過去の世界線の記録</div>';
+            html += '<div id="worldLineHistoryContainer" style="font-size:12px;color:#888;">読み込み中...</div>';
+
             // フッター
             html += '<div style="text-align:center;margin-top:16px;font-size:12px;color:#aaa;">投票して浦安を発展させよう！</div>';
 
             document.getElementById('rankContent').innerHTML = html;
             document.getElementById('rankPopup').style.display = 'flex';
+
+            // Load world line history from Firebase
+            firebaseDb.ref('stats/worldLineHistory').once('value').then(snap => {
+                const history = snap.val();
+                const container = document.getElementById('worldLineHistoryContainer');
+                if (!history || Object.keys(history).length === 0) {
+                    container.innerHTML = '<div style="color:#bbb;text-align:center;padding:8px;">まだ記録がありません</div>';
+                    return;
+                }
+                let hHtml = '';
+                // Sort by world line number descending (newest first)
+                const entries = Object.values(history).sort((a, b) => b.worldLine - a.worldLine);
+                entries.forEach(rec => {
+                    hHtml += '<div style="background:#f8f8ff;border:1px solid #e0e0e0;border-radius:10px;padding:10px 12px;margin-bottom:8px;">';
+                    hHtml += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
+                    hHtml += '<span style="font-weight:bold;color:#667eea;">第' + rec.worldLine + '世界線</span>';
+                    hHtml += '<span style="font-size:11px;color:#aaa;">' + new Date(rec.timestamp).toLocaleDateString('ja-JP') + '</span>';
+                    hHtml += '</div>';
+                    hHtml += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+                    hHtml += '<span style="font-size:20px;">' + (rec.star || '') + '</span>';
+                    hHtml += '<span style="font-weight:bold;font-size:14px;color:#333;">ランク ' + rec.rank + ' - ' + rec.title + '</span>';
+                    hHtml += '</div>';
+                    // Area details
+                    if (rec.areas) {
+                        hHtml += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">';
+                        Object.values(rec.areas).forEach(a => {
+                            hHtml += '<span style="background:#eee;padding:2px 8px;border-radius:8px;font-size:10px;">' + a.name + ': ' + a.levelName + ' (' + a.votes + '票)</span>';
+                        });
+                        hHtml += '</div>';
+                    }
+                    hHtml += '</div>';
+                });
+                container.innerHTML = hHtml;
+            }).catch(err => {
+                const container = document.getElementById('worldLineHistoryContainer');
+                if (container) container.innerHTML = '<div style="color:#ccc;">読み込めませんでした</div>';
+            });
         }
 
         function closeRankPopup() {
