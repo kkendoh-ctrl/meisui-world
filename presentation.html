@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>めいすいくんワールド プレゼン資料</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+      background: #0a0a1a;
+      color: #fff;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .slide {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      padding: 60px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide.active { display: flex; flex-direction: column; }
+
+    /* ===== Slide backgrounds ===== */
+    .slide-title { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); justify-content: center; align-items: center; text-align: center; }
+    .slide-concept { background: linear-gradient(135deg, #1a1a3e 0%, #2d1b69 100%); }
+    .slide-characters { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
+    .slide-flow { background: linear-gradient(135deg, #141e30, #243b55); }
+    .slide-timeline { background: linear-gradient(135deg, #1a0533, #3a1c71); }
+    .slide-features { background: linear-gradient(135deg, #0c0c1d, #1a1a3e); }
+    .slide-tech { background: linear-gradient(135deg, #0d1117, #161b22); }
+    .slide-setup { background: linear-gradient(135deg, #1b2838, #2a475e); }
+    .slide-end { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); justify-content: center; align-items: center; text-align: center; }
+
+    /* ===== Common elements ===== */
+    .slide-number {
+      position: absolute;
+      bottom: 30px;
+      right: 50px;
+      font-size: 16px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .slide-header {
+      font-size: 42px;
+      font-weight: 900;
+      margin-bottom: 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .slide-header .accent {
+      background: linear-gradient(90deg, #ffd700, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .slide-body { flex: 1; display: flex; gap: 40px; }
+
+    h1 { font-size: 72px; font-weight: 900; line-height: 1.3; margin-bottom: 24px; }
+    h2 { font-size: 36px; font-weight: 700; margin-bottom: 16px; }
+
+    .subtitle {
+      font-size: 28px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 40px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 18px;
+      margin: 6px;
+      backdrop-filter: blur(4px);
+    }
+
+    /* ===== Card grid ===== */
+    .card-grid {
+      display: grid;
+      gap: 20px;
+      flex: 1;
+    }
+    .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+
+    .card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 28px;
+      backdrop-filter: blur(8px);
+      transition: transform 0.3s;
+    }
+    .card:hover { transform: translateY(-4px); }
+
+    .card-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .card-desc {
+      font-size: 15px;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.7;
+    }
+
+    /* ===== Character cards ===== */
+    .char-card {
+      background: rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .char-emoji { font-size: 56px; margin-bottom: 10px; display: block; }
+    .char-name { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+    .char-role { font-size: 13px; color: rgba(255,255,255,0.5); }
+    .char-skill {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* ===== Flow diagram ===== */
+    .flow-steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+
+    .flow-step {
+      background: rgba(255,255,255,0.08);
+      border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+      min-width: 160px;
+      max-width: 180px;
+    }
+
+    .flow-step .step-num {
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      line-height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      font-weight: 900;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .flow-step .step-icon { font-size: 40px; display: block; margin-bottom: 8px; }
+    .flow-step .step-text { font-size: 15px; font-weight: 700; }
+    .flow-step .step-sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+    .flow-arrow { font-size: 28px; color: rgba(255,255,255,0.3); }
+
+    /* ===== Timeline ===== */
+    .timeline {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex: 1;
+      padding: 40px 0 20px;
+      position: relative;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      bottom: 60px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #667eea, #ffd700, #ff6b6b);
+    }
+
+    .tl-item {
+      text-align: center;
+      position: relative;
+      flex: 1;
+    }
+
+    .tl-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffd700;
+      margin: 0 auto 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tl-year { font-size: 14px; font-weight: 700; color: #ffd700; margin-bottom: 4px; }
+    .tl-event { font-size: 12px; color: rgba(255,255,255,0.6); }
+    .tl-emoji { font-size: 28px; display: block; margin-bottom: 4px; }
+
+    /* ===== Feature list ===== */
+    .feature-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 18px 24px;
+      margin-bottom: 12px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      border-left: 4px solid;
+    }
+
+    .feature-icon { font-size: 36px; min-width: 50px; text-align: center; }
+    .feature-text h3 { font-size: 18px; font-weight: 700; }
+    .feature-text p { font-size: 14px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+
+    /* ===== Tech stack ===== */
+    .tech-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tech-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    /* ===== Navigation ===== */
+    .nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .nav-btn {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 10px 28px;
+      border-radius: 30px;
+      font-size: 16px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover { background: rgba(255,255,255,0.25); }
+    .nav-btn:active { transform: scale(0.95); }
+
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #667eea, #ffd700);
+      transition: width 0.4s ease;
+      z-index: 100;
+    }
+
+    /* ===== Decorative ===== */
+    .glow-circle {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .key-msg {
+      font-size: 52px;
+      font-weight: 900;
+      text-align: center;
+      line-height: 1.5;
+      margin: auto;
+    }
+
+    .key-msg .highlight {
+      background: linear-gradient(90deg, #ffd700, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Progress bar -->
+<div class="progress-bar" id="progressBar" style="width: 0%"></div>
+
+<!-- ===== SLIDE 1: Title ===== -->
+<div class="slide slide-title active" data-slide="1">
+  <div class="glow-circle" style="width:400px;height:400px;background:#667eea;top:-100px;right:-100px;"></div>
+  <div class="glow-circle" style="width:300px;height:300px;background:#f093fb;bottom:-50px;left:-50px;"></div>
+  <div>
+    <div style="font-size:80px;margin-bottom:20px;">🗳️🌏</div>
+    <h1>めいすいくんワールド</h1>
+    <div class="subtitle">仮想うらやす リアルタイム選挙シミュレーション</div>
+    <div>
+      <span class="badge">🎮 体験型ゲーム</span>
+      <span class="badge">📱 マルチデバイス</span>
+      <span class="badge">🏫 選挙啓発教育</span>
+      <span class="badge">🗺️ 浦安の歴史</span>
+    </div>
+    <div style="margin-top: 50px; font-size: 16px; color: rgba(255,255,255,0.4);">浦安市 Meisui World Project</div>
+  </div>
+  <div class="slide-number">1 / 9</div>
+</div>
+
+<!-- ===== SLIDE 2: Concept ===== -->
+<div class="slide slide-concept" data-slide="2">
+  <div class="glow-circle" style="width:500px;height:500px;background:#764ba2;top:-200px;left:-200px;"></div>
+  <div class="slide-header">💡 <span class="accent">コンセプト</span></div>
+  <div class="slide-body" style="flex-direction:column;justify-content:center;gap:50px;">
+    <div class="key-msg">
+      「一票」で <span class="highlight">浦安の街</span> が育つ<br>
+      <span style="font-size:36px;color:rgba(255,255,255,0.6);">投票するたびに 歴史が動き、街が発展する体験型ゲーム</span>
+    </div>
+    <div style="display:flex;justify-content:center;gap:40px;">
+      <div class="card" style="text-align:center;flex:1;max-width:280px;">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">ねらい</div>
+        <div class="card-desc">子どもから大人まで<br>「投票の力」を体感する</div>
+      </div>
+      <div class="card" style="text-align:center;flex:1;max-width:280px;">
+        <div class="card-icon">🏛️</div>
+        <div class="card-title">テーマ</div>
+        <div class="card-desc">浦安の歴史（1889〜2100年）を<br>投票で追体験</div>
+      </div>
+      <div class="card" style="text-align:center;flex:1;max-width:280px;">
+        <div class="card-icon">🤝</div>
+        <div class="card-title">対象</div>
+        <div class="card-desc">イベント来場者<br>複数iPadで同時投票</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">2 / 9</div>
+</div>
+
+<!-- ===== SLIDE 3: Characters ===== -->
+<div class="slide slide-characters" data-slide="3">
+  <div class="slide-header">🌟 <span class="accent">キャラクター紹介</span></div>
+  <div class="card-grid cols-3" style="flex:1;">
+    <div class="char-card">
+      <span class="char-emoji">🌳</span>
+      <div class="char-name">イチョウめいすいくん</div>
+      <div class="char-role">自然・緑化担当</div>
+      <div class="char-skill" style="background:#ffd70030;color:#ffd700;">黄金繁栄</div>
+      <div class="card-desc" style="margin-top:8px;">イチョウ並木を植えて<br>街を緑に</div>
+    </div>
+    <div class="char-card">
+      <span class="char-emoji">🌺</span>
+      <div class="char-name">ツツジめいちゃん</div>
+      <div class="char-role">子育て・教育担当</div>
+      <div class="char-skill" style="background:#e040fb30;color:#e040fb;">花満笑顔</div>
+      <div class="card-desc" style="margin-top:8px;">ツツジの花壇で<br>街を華やかに</div>
+    </div>
+    <div class="char-card">
+      <span class="char-emoji">🏖️</span>
+      <div class="char-name">ビーナスめいちゃん</div>
+      <div class="char-role">観光・リゾート担当</div>
+      <div class="char-skill" style="background:#ff6b6b30;color:#ff6b6b;">海風観光</div>
+      <div class="card-desc" style="margin-top:8px;">ビーチ施設で<br>観光を盛り上げる</div>
+    </div>
+    <div class="char-card">
+      <span class="char-emoji">🐬</span>
+      <div class="char-name">浦安の海めいすいくん</div>
+      <div class="char-role">環境・海洋担当</div>
+      <div class="char-skill" style="background:#42a5f530;color:#42a5f5;">碧海守護</div>
+      <div class="card-desc" style="margin-top:8px;">三番瀬の海を守り<br>サンゴ礁を育てる</div>
+    </div>
+    <div class="char-card">
+      <span class="char-emoji">🏮</span>
+      <div class="char-name">屋形船めいすいくん</div>
+      <div class="char-role">伝統・文化担当</div>
+      <div class="char-skill" style="background:#ff8a6530;color:#ff8a65;">伝統灯火</div>
+      <div class="card-desc" style="margin-top:8px;">屋形船と提灯で<br>伝統文化を守る</div>
+    </div>
+    <div class="char-card">
+      <span class="char-emoji">🐟</span>
+      <div class="char-name">漁師めいすいくん</div>
+      <div class="char-role">漁業・商業担当</div>
+      <div class="char-skill" style="background:#66bb6a30;color:#66bb6a;">豊漁万歳</div>
+      <div class="card-desc" style="margin-top:8px;">魚市場を賑やかに<br>海の恵みを届ける</div>
+    </div>
+  </div>
+  <div class="slide-number">3 / 9</div>
+</div>
+
+<!-- ===== SLIDE 4: Game Flow ===== -->
+<div class="slide slide-flow" data-slide="4">
+  <div class="slide-header">🎮 <span class="accent">ゲームの流れ</span></div>
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="step-num">1</div>
+      <div class="step-icon">🗳️</div>
+      <div class="step-text">投票する</div>
+      <div class="step-sub">推しキャラを選ぶ</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="step-num">2</div>
+      <div class="step-icon">⚡</div>
+      <div class="step-text">カットイン</div>
+      <div class="step-sub">必殺技演出</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="step-num">3</div>
+      <div class="step-icon">❓</div>
+      <div class="step-text">クイズ</div>
+      <div class="step-sub">浦安・選挙の知識</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="step-num">4</div>
+      <div class="step-icon">🏗️</div>
+      <div class="step-text">街が発展</div>
+      <div class="step-sub">木・花・建物が増える</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="step-num">5</div>
+      <div class="step-icon">📅</div>
+      <div class="step-text">時代が進む</div>
+      <div class="step-sub">1票 = 10年</div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:30px;">
+    <div style="display:inline-flex;align-items:center;gap:20px;background:rgba(255,215,0,0.1);border:2px solid rgba(255,215,0,0.3);padding:20px 40px;border-radius:16px;">
+      <span style="font-size:40px;">🎆</span>
+      <div style="text-align:left;">
+        <div style="font-size:20px;font-weight:700;color:#ffd700;">2100年到達でエンディング！</div>
+        <div style="font-size:14px;color:rgba(255,255,255,0.5);margin-top:2px;">花火が打ち上がり「次の世界線」へ — 何度でも遊べる</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">4 / 9</div>
+</div>
+
+<!-- ===== SLIDE 5: Timeline ===== -->
+<div class="slide slide-timeline" data-slide="5">
+  <div class="slide-header">📅 <span class="accent">浦安タイムライン</span>　<span style="font-size:20px;color:rgba(255,255,255,0.4);">1票 = 10年で歴史を追体験</span></div>
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-emoji">🏘️</div>
+      <div class="tl-dot"></div>
+      <div class="tl-year">1889</div>
+      <div class="tl-event">浦安村<br>誕生</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-emoji">🖤</div>
+      <div class="tl-dot"></div>
+      <div class="tl-year">1949</div>
+      <div class="tl-event">黒い水<br>事件</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-emoji">🚇</div>
+      <div class="tl-dot"></div>
+      <div class="tl-year">1969</div>
+      <div class="tl-event">地下鉄<br>東西線開通</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-emoji">🎉</div>
+      <div class="tl-dot"></div>
+      <div class="tl-year">1981</div>
+      <div class="tl-event">浦安市<br>市制施行</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-emoji">🏰</div>
+      <div class="tl-dot"></div>
+      <div class="tl-year">1983</div>
+      <div class="tl-event">ディズニー<br>ランド開園</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-emoji">🗳️</div>
+      <div class="tl-dot" style="background:#ff6b6b;"></div>
+      <div class="tl-year" style="color:#ff6b6b;">2026</div>
+      <div class="tl-event" style="color:#fff;font-weight:700;">現在</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-emoji">🚡</div>
+      <div class="tl-dot"></div>
+      <div class="tl-year">2069</div>
+      <div class="tl-event">ロープ<br>ウェイ開通</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-emoji">🌟</div>
+      <div class="tl-dot" style="background:#ffd700;width:20px;height:20px;"></div>
+      <div class="tl-year">2100</div>
+      <div class="tl-event" style="color:#ffd700;font-weight:700;">未来都市<br>完成!</div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:20px;">
+    <span class="badge" style="font-size:16px;">🌀 2100年到達後「世界線」が変わり、歴史は1889年からリスタート</span>
+  </div>
+  <div class="slide-number">5 / 9</div>
+</div>
+
+<!-- ===== SLIDE 6: Features ===== -->
+<div class="slide slide-features" data-slide="6">
+  <div class="slide-header">✨ <span class="accent">主な機能</span></div>
+  <div class="slide-body" style="flex-direction:column;gap:0;">
+    <div class="feature-row" style="border-color:#ffd700;">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-text">
+        <h3>カットイン演出</h3>
+        <p>投票するとキャラクターが画面いっぱいに登場。四字熟語の必殺技名が表示される</p>
+      </div>
+    </div>
+    <div class="feature-row" style="border-color:#42a5f5;">
+      <div class="feature-icon">❓</div>
+      <div class="feature-text">
+        <h3>選挙・浦安クイズ</h3>
+        <p>投票後にクイズが出題。選挙権の年齢や浦安の地理など20問以上を収録</p>
+      </div>
+    </div>
+    <div class="feature-row" style="border-color:#66bb6a;">
+      <div class="feature-icon">🏗️</div>
+      <div class="feature-text">
+        <h3>建物解放システム</h3>
+        <p>投票数に応じて学校・病院・駅・博物館など12種の施設がアンロックされる</p>
+      </div>
+    </div>
+    <div class="feature-row" style="border-color:#e040fb;">
+      <div class="feature-icon">🌺</div>
+      <div class="feature-text">
+        <h3>マップ上の視覚変化</h3>
+        <p>キャラクターごとに木・花・サンゴ・提灯・魚市場などが浦安の地図上に増えていく</p>
+      </div>
+    </div>
+    <div class="feature-row" style="border-color:#ff8a65;">
+      <div class="feature-icon">🤝</div>
+      <div class="feature-text">
+        <h3>キャラクター交流イベント</h3>
+        <p>キャラ同士が近づくと「じゃんけん大会」「浦安盆踊り」「お神輿」など自動イベント発生</p>
+      </div>
+    </div>
+    <div class="feature-row" style="border-color:#ff6b6b;">
+      <div class="feature-icon">🌀</div>
+      <div class="feature-text">
+        <h3>世界線システム</h3>
+        <p>2100年到達でエンディング。「次の世界線へ」ボタンで1889年にリスタート。何周でも遊べる</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">6 / 9</div>
+</div>
+
+<!-- ===== SLIDE 7: Tech ===== -->
+<div class="slide slide-tech" data-slide="7">
+  <div class="slide-header">🛠️ <span class="accent">技術構成</span></div>
+  <div class="slide-body">
+    <div style="flex:1;">
+      <h2 style="margin-bottom:20px;">システム構成</h2>
+      <div class="tech-item">
+        <div class="tech-logo" style="background:#ffa611;">🔥</div>
+        <div>
+          <div style="font-weight:700;">Firebase Realtime Database</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.5);">リアルタイム投票同期・全端末で即時反映</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-logo" style="background:#e44d26;">5</div>
+        <div>
+          <div style="font-weight:700;">HTML5 Canvas</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.5);">浦安マップ描画・キャラクターアニメーション・パーティクル</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-logo" style="background:#3178c6;">JS</div>
+        <div>
+          <div style="font-weight:700;">Vanilla JavaScript</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.5);">フレームワーク不要・シングルHTML・軽量高速</div>
+        </div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-logo" style="background:#4285f4;">☁️</div>
+        <div>
+          <div style="font-weight:700;">GitHub Pages</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.5);">静的ホスティング・デプロイ即時</div>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;">
+      <h2 style="margin-bottom:20px;">ファイル構成</h2>
+      <div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:24px;font-family:monospace;font-size:15px;line-height:2;">
+        <div style="color:#ffd700;">meisui-world/</div>
+        <div>&nbsp;&nbsp;├── <span style="color:#42a5f5;">index.html</span> <span style="color:rgba(255,255,255,0.3);">… トップページ</span></div>
+        <div>&nbsp;&nbsp;├── <span style="color:#ff6b6b;">vote.html</span> <span style="color:rgba(255,255,255,0.3);">… iPad投票画面</span></div>
+        <div>&nbsp;&nbsp;├── <span style="color:#e040fb;">display.html</span> <span style="color:rgba(255,255,255,0.3);">… モニター結果表示</span></div>
+        <div>&nbsp;&nbsp;├── <span style="color:#66bb6a;font-weight:bold;">world.html</span> <span style="color:rgba(255,255,255,0.3);">… メインゲーム画面</span></div>
+        <div>&nbsp;&nbsp;└── <span style="color:rgba(255,255,255,0.3);">urayasu_map.webp … 地図画像</span></div>
+      </div>
+      <div style="margin-top:24px;">
+        <h2 style="margin-bottom:12px;">特徴</h2>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <span class="badge">🚀 サーバーレス</span>
+          <span class="badge">📶 リアルタイム同期</span>
+          <span class="badge">📱 マルチデバイス</span>
+          <span class="badge">🔒 Firebase Auth不要</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">7 / 9</div>
+</div>
+
+<!-- ===== SLIDE 8: Setup ===== -->
+<div class="slide slide-setup" data-slide="8">
+  <div class="slide-header">📐 <span class="accent">イベント設営イメージ</span></div>
+  <div class="slide-body">
+    <div style="flex:1;">
+      <div class="card" style="padding:32px;margin-bottom:20px;">
+        <div class="card-icon">📺</div>
+        <div class="card-title">55インチモニター × 1台</div>
+        <div class="card-desc">
+          <strong>world.html</strong> をフルスクリーン表示<br>
+          浦安マップ＋リアルタイム投票ランキング<br>
+          キャラクターが動き回り、街が発展する様子を大画面で
+        </div>
+      </div>
+      <div class="card" style="padding:32px;margin-bottom:20px;">
+        <div class="card-icon">📱</div>
+        <div class="card-title">iPad × 複数台（投票用）</div>
+        <div class="card-desc">
+          <strong>vote.html</strong> を各iPadで開く<br>
+          来場者が推しキャラに投票<br>
+          タッチフレンドリーな大きなボタン
+        </div>
+      </div>
+      <div class="card" style="padding:32px;">
+        <div class="card-icon">📊</div>
+        <div class="card-title">サブモニター（任意）</div>
+        <div class="card-desc">
+          <strong>display.html</strong> でランキング＆棒グラフ表示<br>
+          投票率・町ランクもリアルタイム更新
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+      <div style="position:relative;width:400px;height:400px;">
+        <!-- Monitor -->
+        <div style="position:absolute;top:20px;left:50%;transform:translateX(-50%);width:220px;height:140px;background:#1a1a3e;border:4px solid #555;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#667eea;text-align:center;font-weight:700;">
+          📺 55インチ<br>world.html
+        </div>
+        <!-- iPads -->
+        <div style="position:absolute;bottom:40px;left:20px;width:100px;height:70px;background:#1a1a3e;border:3px solid #555;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#ff6b6b;text-align:center;font-weight:700;">
+          📱 iPad 1<br>vote.html
+        </div>
+        <div style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);width:100px;height:70px;background:#1a1a3e;border:3px solid #555;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#ff6b6b;text-align:center;font-weight:700;">
+          📱 iPad 2<br>vote.html
+        </div>
+        <div style="position:absolute;bottom:40px;right:20px;width:100px;height:70px;background:#1a1a3e;border:3px solid #555;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#ff6b6b;text-align:center;font-weight:700;">
+          📱 iPad 3<br>vote.html
+        </div>
+        <!-- Arrows -->
+        <div style="position:absolute;top:170px;left:65px;font-size:20px;color:rgba(255,255,255,0.3);transform:rotate(-20deg);">↑ Firebase ↑</div>
+        <div style="position:absolute;top:170px;right:55px;font-size:20px;color:rgba(255,255,255,0.3);transform:rotate(20deg);">↑ Firebase ↑</div>
+        <!-- Cloud -->
+        <div style="position:absolute;top:195px;left:50%;transform:translateX(-50%);background:rgba(255,166,0,0.15);border:2px solid rgba(255,166,0,0.3);border-radius:20px;padding:8px 20px;font-size:13px;color:#ffa611;font-weight:700;">
+          🔥 Firebase DB
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">8 / 9</div>
+</div>
+
+<!-- ===== SLIDE 9: End ===== -->
+<div class="slide slide-end" data-slide="9">
+  <div class="glow-circle" style="width:500px;height:500px;background:#ffd700;top:-200px;left:-200px;"></div>
+  <div class="glow-circle" style="width:400px;height:400px;background:#ff6b6b;bottom:-100px;right:-100px;"></div>
+  <div>
+    <div style="font-size:100px;margin-bottom:24px;">🗳️</div>
+    <h1 style="font-size:56px;">あなたの一票が<br>浦安の未来をつくる</h1>
+    <div class="subtitle" style="margin-top:20px;">めいすいくんワールドで、投票の力を体感しよう</div>
+    <div style="margin-top:40px;">
+      <span class="badge" style="font-size:18px;padding:12px 28px;">ご清聴ありがとうございました</span>
+    </div>
+  </div>
+  <div class="slide-number">9 / 9</div>
+</div>
+
+<!-- Navigation -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" onclick="navigate(-1)">← 前へ</button>
+  <button class="nav-btn" onclick="navigate(1)">次へ →</button>
+</div>
+
+<script>
+  let currentSlide = 1;
+  const totalSlides = document.querySelectorAll('.slide').length;
+
+  function navigate(dir) {
+    const next = currentSlide + dir;
+    if (next < 1 || next > totalSlides) return;
+    document.querySelector('.slide.active').classList.remove('active');
+    currentSlide = next;
+    document.querySelector(`[data-slide="${currentSlide}"]`).classList.add('active');
+    document.getElementById('progressBar').style.width = ((currentSlide / totalSlides) * 100) + '%';
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); navigate(1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1); }
+    if (e.key === 'f' || e.key === 'F') {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+    }
+  });
+
+  // Touch swipe
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 60) navigate(diff > 0 ? 1 : -1);
+  });
+</script>
+
+</body>
+</html>
