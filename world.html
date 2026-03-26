@@ -1103,12 +1103,7 @@ h<!DOCTYPE html>
                 <button onclick="debugAddVotes(2)" style="flex:1;font-size:9px;color:#fff;background:#d32f2f;border:none;padding:3px 0;border-radius:5px;cursor:pointer;font-weight:bold;">+20年</button>
                 <button onclick="debugAddVotes(5)" style="flex:1;font-size:9px;color:#fff;background:#b71c1c;border:none;padding:3px 0;border-radius:5px;cursor:pointer;font-weight:bold;">+50年</button>
             </div>
-            <div style="padding:2px 8px 6px;display:flex;gap:3px;justify-content:center;">
-                <button onclick="zoomIn()" style="width:30px;height:30px;border-radius:50%;border:1px solid #ddd;background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#555;">＋</button>
-                <button onclick="zoomOut()" style="width:30px;height:30px;border-radius:50%;border:1px solid #ddd;background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#555;">ー</button>
-                <button onclick="zoomReset()" style="width:30px;height:30px;border-radius:50%;border:1px solid #ddd;background:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#555;">🔍</button>
-                <button onclick="if(document.fullscreenElement){document.exitFullscreen()}else{document.documentElement.requestFullscreen().catch(()=>{})}" style="width:30px;height:30px;border-radius:50%;border:1px solid #ddd;background:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#555;">⛶</button>
-            </div>
+            <!-- ズームボタン削除（固定画面） -->
         </div>
     </div>
 
@@ -4268,10 +4263,9 @@ h<!DOCTYPE html>
             if (ambientPhase > 0.75) {
                 updateFireflies();
             }
-            // Camera smooth zoom (stretch to fill, user zoom multiplier)
-            camera.userZoom += (camera.targetUserZoom - camera.userZoom) * 0.1;
-            camera.zoomX = camera.baseZoomX * camera.userZoom;
-            camera.zoomY = camera.baseZoomY * camera.userZoom;
+            // Camera fixed (no user zoom — stretch to fill only)
+            camera.zoomX = camera.baseZoomX;
+            camera.zoomY = camera.baseZoomY;
 
             // Clear canvas with sky gradient
             const gradient = ctx.createLinearGradient(0, 0, 0, H);
@@ -4480,8 +4474,7 @@ h<!DOCTYPE html>
 
         canvas.addEventListener('wheel', e => {
             e.preventDefault();
-            // Zoom only (user zoom multiplier)
-            camera.targetUserZoom = Math.max(0.5, Math.min(3, camera.targetUserZoom * (e.deltaY > 0 ? 0.9 : 1.1)));
+            // Zoom disabled — fixed screen
         }, { passive: false });
 
         // Touch support for mobile
@@ -4502,7 +4495,7 @@ h<!DOCTYPE html>
                 lastMy = e.touches[0].clientY;
             } else if (e.touches.length === 2) {
                 if (draggedChar) { draggedChar = null; }
-                lastTouchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                // Pinch zoom disabled — fixed screen
             }
         }, { passive: false });
 
@@ -4516,12 +4509,7 @@ h<!DOCTYPE html>
                 }
                 // Map panning disabled — fixed view
             } else if (e.touches.length === 2) {
-                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                if (lastTouchDist > 0) {
-                    const scale = dist / lastTouchDist;
-                    camera.targetUserZoom = Math.max(0.5, Math.min(3, camera.targetUserZoom * scale));
-                }
-                lastTouchDist = dist;
+                // Pinch zoom disabled — fixed screen
             }
         }, { passive: false });
 
@@ -4548,16 +4536,10 @@ h<!DOCTYPE html>
             }).catch(err => console.error('Debug vote failed:', err));
         }
 
-        // Zoom button functions
-        function zoomIn() {
-            camera.targetUserZoom = Math.min(3, camera.targetUserZoom * 1.3);
-        }
-        function zoomOut() {
-            camera.targetUserZoom = Math.max(0.5, camera.targetUserZoom * 0.7);
-        }
-        function zoomReset() {
-            camera.targetUserZoom = 1;
-        }
+        // Zoom disabled — fixed screen
+        function zoomIn() {}
+        function zoomOut() {}
+        function zoomReset() {}
 
         // Character click handler
         canvas.addEventListener('dblclick', e => {
