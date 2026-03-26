@@ -4659,19 +4659,21 @@ h<!DOCTYPE html>
         const START_YEAR = 1889;
         const END_YEAR = 2100;
         const YEARS_PER_VOTE = 10;
-        // 23票で1周: 0票=1889, 1票=1899, ..., 20票=2089, 21票=2099, 22票=2100(エンディング), 23票→次の世界線
+        // 22票で2100年到達: 0票=1889, 1票=1899, ..., 21票=2099, 22票=2100(エンディング)
+        // 23票以上も2100年で固定。世界線ボタンを押してworldLineOffset+1すると1889年に戻る
         const VOTES_PER_CYCLE = 23;
 
         function getEffectiveVotes() {
             // worldLineOffset分のサイクルを差し引いて、現在のサイクル内の票数を計算
-            return totalVotes - (worldLineOffset || 0) * VOTES_PER_CYCLE;
+            // modulo不使用: 22票以上は2100年で固定、世界線ボタンでのみリセット
+            return Math.max(0, totalVotes - (worldLineOffset || 0) * VOTES_PER_CYCLE);
         }
 
         function getCurrentYear() {
             const effective = getEffectiveVotes();
-            const votesInCycle = ((effective % VOTES_PER_CYCLE) + VOTES_PER_CYCLE) % VOTES_PER_CYCLE;
-            if (votesInCycle >= 22) return END_YEAR; // 22票=2100年エンディング
-            return START_YEAR + votesInCycle * YEARS_PER_VOTE; // 21票=2099年
+            // 22票以上は2100年で固定（ボタンで世界線移行するまで）
+            if (effective >= 22) return END_YEAR;
+            return START_YEAR + effective * YEARS_PER_VOTE;
         }
 
         function getWorldLine() {
@@ -4680,8 +4682,7 @@ h<!DOCTYPE html>
 
         function isEndingTrigger() {
             const effective = getEffectiveVotes();
-            const votesInCycle = ((effective % VOTES_PER_CYCLE) + VOTES_PER_CYCLE) % VOTES_PER_CYCLE;
-            return votesInCycle === 22; // 22票目=2100年でエンディング
+            return effective === 22; // ちょうど22票目でエンディング発火
         }
 
         function updateYearDisplay() {
