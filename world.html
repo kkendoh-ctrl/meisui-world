@@ -3862,7 +3862,7 @@ h<!DOCTYPE html>
             // Vote bonus scaling and glow
             const voteBonus = votes[char.type] || 0;
             const voteScale = 1 + Math.min(voteBonus * 0.02, 0.5); // Up to 50% bigger
-            const baseSize = char.type === 'tsutsuji' ? 168 : 160; // tsutsuji: 240*0.7=168
+            const baseSize = char.type === 'tsutsuji' ? 168 : char.type === 'ryoushi' ? 400 : 160;
             const size = baseSize * voteScale;
             const aspect = img.naturalWidth / img.naturalHeight;
             const w = size * aspect;
@@ -4441,7 +4441,7 @@ h<!DOCTYPE html>
                 const char = characters[i];
                 const dx = char.x - mapX;
                 const dy = char.y - mapY;
-                const charSize = (char.type === 'tsutsuji' ? 168 : 160) / 2;
+                const charSize = (char.type === 'tsutsuji' ? 168 : char.type === 'ryoushi' ? 400 : 160) / 2;
                 if (Math.abs(dx) < charSize && Math.abs(dy) < charSize) {
                     return char;
                 }
