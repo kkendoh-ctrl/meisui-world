@@ -4347,18 +4347,19 @@ h<!DOCTYPE html>
         }
 
         // rankLevels (moved before updateBarGraph to avoid undefined error)
+        // 1世界線22票で完結するランクシステム
         var rankLevels = [
             { min: 0, rank: 'F', title: '田舎の漁村', color: '#999', star: '☆', desc: 'のどかな浦安…投票で街を発展させよう！' },
-            { min: 3, rank: 'E', title: 'ちいさな集落', color: '#88aacc', star: '⭐', desc: '少しずつ人が集まり始めた' },
-            { min: 8, rank: 'D', title: 'のどかな町', color: '#66bb6a', star: '⭐⭐', desc: '町に活気が出てきた！' },
-            { min: 15, rank: 'C', title: '発展する港町', color: '#42a5f5', star: '⭐⭐⭐', desc: '商業と観光が盛り上がってきた！' },
-            { min: 25, rank: 'B', title: 'にぎわう観光都市', color: '#ffa726', star: '⭐⭐⭐⭐', desc: '浦安は観光名所に！花火も上がる！' },
-            { min: 40, rank: 'A', title: '輝く海辺の楽園', color: '#ef5350', star: '⭐⭐⭐⭐⭐', desc: '自然と商業が調和する理想の街！' },
-            { min: 60, rank: 'S', title: '伝説のめいすいくんワールド', color: '#e040fb', star: '🌟🌟🌟🌟🌟', desc: '全てが揃った究極の浦安！' },
+            { min: 2, rank: 'E', title: 'ちいさな集落', color: '#88aacc', star: '⭐', desc: '少しずつ人が集まり始めた' },
+            { min: 5, rank: 'D', title: 'のどかな町', color: '#66bb6a', star: '⭐⭐', desc: '町に活気が出てきた！' },
+            { min: 9, rank: 'C', title: '発展する港町', color: '#42a5f5', star: '⭐⭐⭐', desc: '商業と観光が盛り上がってきた！' },
+            { min: 14, rank: 'B', title: 'にぎわう観光都市', color: '#ffa726', star: '⭐⭐⭐⭐', desc: '浦安は観光名所に！' },
+            { min: 18, rank: 'A', title: '輝く海辺の楽園', color: '#ef5350', star: '⭐⭐⭐⭐⭐', desc: '自然と商業が調和する理想の街！' },
+            { min: 22, rank: 'S', title: '伝説のめいすいくんワールド', color: '#e040fb', star: '🌟🌟🌟🌟🌟', desc: '全てが揃った究極の浦安！' },
         ];
 
         function getOverallRank() {
-            var total = Object.values(votes).reduce(function(a, b) { return a + b; }, 0);
+            var total = getEffectiveVotes();
             var result = rankLevels[0];
             for (var i = rankLevels.length - 1; i >= 0; i--) {
                 if (total >= rankLevels[i].min) {
@@ -4375,17 +4376,19 @@ h<!DOCTYPE html>
         }
 
         // Level thresholds (moved before updateBarGraph to avoid TDZ error)
+        // 1世界線22票で完結するレベルシステム
         const levelThresholds = [
-            { min: 0, max: 30, title: "はらっぱ", emoji: "🌾" },
-            { min: 31, max: 80, title: "ちいさなむら", emoji: "🏘️" },
-            { min: 81, max: 150, title: "にぎやかなまち", emoji: "🏙️" },
-            { min: 151, max: 250, title: "すてきなみやこ", emoji: "👑" },
-            { min: 251, max: 9999, title: "ゆめのまち", emoji: "✨" },
+            { min: 0, max: 4, title: "はらっぱ", emoji: "🌾" },
+            { min: 5, max: 9, title: "ちいさなむら", emoji: "🏘️" },
+            { min: 10, max: 14, title: "にぎやかなまち", emoji: "🏙️" },
+            { min: 15, max: 19, title: "すてきなみやこ", emoji: "👑" },
+            { min: 20, max: 22, title: "ゆめのまち", emoji: "✨" },
         ];
 
         function getCurrentLevel() {
+            const effective = getEffectiveVotes();
             for (let i = levelThresholds.length - 1; i >= 0; i--) {
-                if (totalVotes >= levelThresholds[i].min) {
+                if (effective >= levelThresholds[i].min) {
                     return levelThresholds[i];
                 }
             }
@@ -4845,7 +4848,53 @@ h<!DOCTYPE html>
         // ビルディング解放システム（V3新機能）
         // ============================================
         
-        const buildingsList = [{"id": "house", "name": "おうち", "unlock_votes": 0, "happiness_bonus": 2, "service_bonus": 0, "category": "住居"}, {"id": "school", "name": "がっこう", "unlock_votes": 5, "happiness_bonus": 5, "service_bonus": 10, "category": "教育", "real_count": 9}, {"id": "park", "name": "こうえん", "unlock_votes": 10, "happiness_bonus": 8, "service_bonus": 5, "category": "環境", "real_count": 130}, {"id": "library", "name": "としょかん", "unlock_votes": 20, "happiness_bonus": 7, "service_bonus": 8, "category": "文化", "real_count": 7}, {"id": "hospital", "name": "びょういん", "unlock_votes": 35, "happiness_bonus": 10, "service_bonus": 15, "category": "医療"}, {"id": "station", "name": "えき", "unlock_votes": 50, "happiness_bonus": 5, "service_bonus": 12, "category": "交通", "real_note": "浦安駅・新浦安駅・舞浜駅"}, {"id": "fire_station", "name": "しょうぼうしょ", "unlock_votes": 70, "happiness_bonus": 3, "service_bonus": 15, "category": "防災", "real_count": 4, "disaster_reduction": 0.3}, {"id": "community_center", "name": "こうみんかん", "unlock_votes": 90, "happiness_bonus": 6, "service_bonus": 10, "category": "交流", "real_count": 7}, {"id": "museum", "name": "はくぶつかん", "unlock_votes": 120, "happiness_bonus": 8, "service_bonus": 8, "category": "文化", "real_note": "浦安市郷土博物館"}, {"id": "city_hall", "name": "しやくしょ", "unlock_votes": 150, "happiness_bonus": 3, "service_bonus": 20, "category": "行政", "policy_multiplier": 1.2}, {"id": "cultural_hall", "name": "ぶんかかいかん", "unlock_votes": 200, "happiness_bonus": 10, "service_bonus": 12, "category": "文化"}, {"id": "sanbanze", "name": "さんばんぜ", "unlock_votes": 250, "happiness_bonus": 15, "service_bonus": 5, "category": "自然", "special": true}];
+        // ========== 建物リスト（累計票数で発動） ==========
+        const buildingsList = [
+            // 序盤（1〜5票）
+            { id: "house", name: "おうち", unlock_votes: 1, category: "住居", emoji: "🏠" },
+            { id: "school", name: "がっこう", unlock_votes: 3, category: "教育", emoji: "🏫" },
+            // 中盤（5〜12票）
+            { id: "park", name: "こうえん", unlock_votes: 5, category: "環境", emoji: "🌳" },
+            { id: "library", name: "としょかん", unlock_votes: 7, category: "文化", emoji: "📚" },
+            { id: "hospital", name: "びょういん", unlock_votes: 9, category: "医療", emoji: "🏥" },
+            { id: "station", name: "えき", unlock_votes: 11, category: "交通", emoji: "🚉" },
+            // 後半（13〜20票）
+            { id: "fire_station", name: "しょうぼうしょ", unlock_votes: 13, category: "防災", emoji: "🚒" },
+            { id: "community_center", name: "こうみんかん", unlock_votes: 15, category: "交流", emoji: "🏛️" },
+            { id: "museum", name: "はくぶつかん", unlock_votes: 17, category: "文化", emoji: "🏛️" },
+            { id: "city_hall", name: "しやくしょ", unlock_votes: 19, category: "行政", emoji: "🏢" },
+            // 終盤（20〜22票）
+            { id: "cultural_hall", name: "ぶんかかいかん", unlock_votes: 20, category: "文化", emoji: "🎭" },
+            { id: "sanbanze", name: "さんばんぜ", unlock_votes: 22, category: "自然", emoji: "🌊", special: true },
+        ];
+
+        // ========== キャラ別建物（各キャラへの投票数で発動） ==========
+        const charBuildingsList = [
+            // イチョウめいすいくん → 自然・緑化
+            { id: "ginkgo_park", name: "イチョウこうえん", char: "meisui", unlock_votes: 2, emoji: "🌳" },
+            { id: "botanical_garden", name: "しょくぶつえん", char: "meisui", unlock_votes: 5, emoji: "🌿" },
+            { id: "forest_school", name: "もりのがっこう", char: "meisui", unlock_votes: 8, emoji: "🏕️" },
+            // ツツジめいちゃん → 花・子育て
+            { id: "flower_road", name: "はなみち", char: "tsutsuji", unlock_votes: 2, emoji: "🌸" },
+            { id: "nursery", name: "ほいくえん", char: "tsutsuji", unlock_votes: 5, emoji: "👶" },
+            { id: "kids_plaza", name: "こどもひろば", char: "tsutsuji", unlock_votes: 8, emoji: "🎠" },
+            // ビーナスめいちゃん → 観光・リゾート
+            { id: "beach_house", name: "うみのいえ", char: "meisui_chan", unlock_votes: 2, emoji: "🏖️" },
+            { id: "hotel", name: "ホテル", char: "meisui_chan", unlock_votes: 5, emoji: "🏨" },
+            { id: "aquarium", name: "すいぞくかん", char: "meisui_chan", unlock_votes: 8, emoji: "🐠" },
+            // 海めいすいくん → 海・環境
+            { id: "fishing_pier", name: "つりばし", char: "bekabune", unlock_votes: 2, emoji: "🎣" },
+            { id: "marine_center", name: "うみのセンター", char: "bekabune", unlock_votes: 5, emoji: "🐬" },
+            { id: "coral_reef", name: "サンゴしょく", char: "bekabune", unlock_votes: 8, emoji: "🪸" },
+            // 屋形船めいすいくん → 伝統・文化
+            { id: "shrine", name: "じんじゃ", char: "asari", unlock_votes: 2, emoji: "⛩️" },
+            { id: "festival_hall", name: "おまつりかいかん", char: "asari", unlock_votes: 5, emoji: "🏮" },
+            { id: "fireworks_spot", name: "はなびスポット", char: "asari", unlock_votes: 8, emoji: "🎆" },
+            // 漁師めいすいくん → 商業・産業
+            { id: "fish_shop", name: "さかなや", char: "ryoushi", unlock_votes: 2, emoji: "🐟" },
+            { id: "market", name: "いちば", char: "ryoushi", unlock_votes: 5, emoji: "🏪" },
+            { id: "port", name: "みなと", char: "ryoushi", unlock_votes: 8, emoji: "⚓" },
+        ];
         
         var builtBuildings = JSON.parse(localStorage.getItem('meisui_builtBuildings') || '[]');
 
@@ -4865,16 +4914,33 @@ h<!DOCTYPE html>
         }
 
         function checkBuildingUnlock(prevVotes) {
-            const decoTotal = Object.values(decorationOffset || {}).reduce((a, b) => a + b, 0);
-            const adjustedTotal = totalVotes - decoTotal;
+            const effective = getEffectiveVotes();
             let newUnlock = false;
+
+            // 累計票数ベースの建物
             buildingsList.forEach(building => {
-                if (prevVotes < building.unlock_votes && adjustedTotal >= building.unlock_votes && !builtBuildings.includes(building.id)) {
+                if (effective >= building.unlock_votes && !builtBuildings.includes(building.id)) {
                     builtBuildings.push(building.id);
                     newUnlock = true;
                     queueEvent(() => showBuildingNotification(building));
                 }
             });
+
+            // キャラ別票数ベースの建物
+            charBuildingsList.forEach(building => {
+                const charVotes = Math.max(0, (votes[building.char] || 0) - (decorationOffset[building.char] || 0));
+                if (charVotes >= building.unlock_votes && !builtBuildings.includes(building.id)) {
+                    builtBuildings.push(building.id);
+                    newUnlock = true;
+                    const meta = charMetadata[building.char];
+                    queueEvent(() => showBuildingNotification({
+                        ...building,
+                        charName: meta ? meta.name : '',
+                        charColor: meta ? meta.color : '#ffd700'
+                    }));
+                }
+            });
+
             if (newUnlock) {
                 localStorage.setItem('meisui_builtBuildings', JSON.stringify(builtBuildings));
                 saveBuildingsToFirebase();
@@ -4904,7 +4970,9 @@ h<!DOCTYPE html>
                 animation: slideDown 0.5s ease-out;
                 font-family: sans-serif;
             `;
-            notif.innerHTML = `🏗️ ${building.name}が たった！`;
+            const emojiIcon = building.emoji || '🏗️';
+            const charLine = building.charName ? `<div style="font-size:14px;color:#888;margin-top:4px;">${building.charName}の力で建設！</div>` : '';
+            notif.innerHTML = `${emojiIcon} ${building.name}が たった！${charLine}`;
             document.body.appendChild(notif);
             
             setTimeout(() => {
@@ -4920,12 +4988,31 @@ h<!DOCTYPE html>
         
         var lastEventVotes = 0;
         
-        const goodEvents = [{"name": "おまつりだ！", "trigger": "random", "effect": "happiness+10", "probability": 0.1}, {"name": "あたらしいお店がオープン", "trigger": "random", "effect": "tax_revenue+5%", "probability": 0.08}, {"name": "三番瀬にめずらしい鳥が来た", "trigger": "votes>50", "effect": "population+2", "probability": 0.05}, {"name": "うらやすシティマラソン開催", "trigger": "random", "effect": "happiness+8", "probability": 0.06}];
-        const challengeEvents = [{"name": "たいふうが きた！", "trigger": "random", "effect": "infrastructure_decay+10", "mitigation": "fire_station", "probability": 0.08}, {"name": "えきまえが こんざつ！", "trigger": "population>30", "effect": "happiness-5", "mitigation": "station", "probability": 0.07}, {"name": "こうれいかが すすんだ", "trigger": "votes>100", "effect": "service_demand+15%", "mitigation": "hospital", "probability": 0.06}, {"name": "じしん！えきじょうかに ちゅうい", "trigger": "random", "effect": "infrastructure_decay+15", "mitigation": "fire_station", "probability": 0.04, "urayasu_special": true}];
+        const goodEvents = [
+            { name: "おまつりだ！", trigger: "random", effect: "happiness+10", probability: 0.12, emoji: "🎉" },
+            { name: "あたらしいお店がオープン", trigger: "random", effect: "tax_revenue+5%", probability: 0.10, emoji: "🏪" },
+            { name: "三番瀬にめずらしい鳥が来た", trigger: "votes>8", effect: "population+2", probability: 0.08, emoji: "🦅" },
+            { name: "うらやすシティマラソン開催", trigger: "random", effect: "happiness+8", probability: 0.08, emoji: "🏃" },
+            { name: "モルック大会 開催！", trigger: "random", effect: "happiness+15", probability: 0.10, emoji: "🪵" },
+            { name: "イチョウ並木が色づいた！", trigger: "char_meisui>3", effect: "happiness+5", probability: 0.15, emoji: "🍂" },
+            { name: "花畑にチョウチョが来た！", trigger: "char_tsutsuji>3", effect: "happiness+5", probability: 0.15, emoji: "🦋" },
+            { name: "ビーチでイルカが見れた！", trigger: "char_meisui_chan>3", effect: "happiness+8", probability: 0.12, emoji: "🐬" },
+            { name: "海がとてもきれいになった！", trigger: "char_bekabune>3", effect: "happiness+8", probability: 0.12, emoji: "🌊" },
+            { name: "屋形船まつり 大盛況！", trigger: "char_asari>3", effect: "happiness+10", probability: 0.12, emoji: "🏮" },
+            { name: "魚市場に大行列！", trigger: "char_ryoushi>3", effect: "happiness+10", probability: 0.12, emoji: "🐟" },
+        ];
+        const challengeEvents = [
+            { name: "たいふうが きた！", trigger: "random", effect: "infrastructure_decay+10", mitigation: "fire_station", probability: 0.08, emoji: "🌀" },
+            { name: "えきまえが こんざつ！", trigger: "votes>8", effect: "happiness-5", mitigation: "station", probability: 0.07, emoji: "🚉" },
+            { name: "こうれいかが すすんだ", trigger: "votes>12", effect: "service_demand+15%", mitigation: "hospital", probability: 0.06, emoji: "👴" },
+            { name: "じしん！えきじょうかに ちゅうい", trigger: "random", effect: "infrastructure_decay+15", mitigation: "fire_station", probability: 0.04, emoji: "💥", urayasu_special: true },
+            { name: "ゴミがふえてきた…", trigger: "votes>6", effect: "happiness-3", probability: 0.06, emoji: "🗑️" },
+            { name: "さかなが へってきた…", trigger: "char_ryoushi>5", effect: "happiness-5", probability: 0.08, emoji: "😢" },
+        ];
         
         function checkEventTrigger() {
             const votesSince = totalVotes - lastEventVotes;
-            if (votesSince >= 20) {
+            if (votesSince >= 5) {
                 lastEventVotes = totalVotes;
                 triggerRandomEvent();
             }
@@ -4943,15 +5030,26 @@ h<!DOCTYPE html>
         }
         
         function canTriggerEvent(event) {
-            if (event.trigger === 'random') return Math.random() < (event.probability || 0.1);
+            const prob = event.probability || 0.1;
+            if (event.trigger === 'random') return Math.random() < prob;
             if (event.trigger.includes('votes>')) {
                 const threshold = parseInt(event.trigger.split('>')[1]);
-                return totalVotes > threshold;
+                return getEffectiveVotes() > threshold && Math.random() < prob;
+            }
+            if (event.trigger.startsWith('char_')) {
+                // キャラ別条件: "char_meisui>3" → meisui票が3超
+                const match = event.trigger.match(/char_(\w+)>(\d+)/);
+                if (match) {
+                    const charType = match[1];
+                    const threshold = parseInt(match[2]);
+                    const charVotes = Math.max(0, (votes[charType] || 0) - (decorationOffset[charType] || 0));
+                    return charVotes > threshold && Math.random() < prob;
+                }
             }
             if (event.trigger.includes('population>')) {
-                return true;
+                return Math.random() < prob;
             }
-            return true;
+            return Math.random() < prob;
         }
         
         function showEventPopup(event) {
@@ -4979,11 +5077,12 @@ h<!DOCTYPE html>
                 font-family: sans-serif;
             `;
             
-            const eventText = event.name.includes('た！') || event.name.includes('開催') 
-                ? event.name 
+            const eventText = event.name.includes('た！') || event.name.includes('開催') || event.name.includes('…')
+                ? event.name
                 : event.name + '！';
-            
-            popup.innerHTML = eventText;
+            const emojiIcon = event.emoji || '📢';
+
+            popup.innerHTML = `<div style="font-size:48px;margin-bottom:8px;">${emojiIcon}</div>${eventText}`;
             document.body.appendChild(popup);
             
             setTimeout(() => {
