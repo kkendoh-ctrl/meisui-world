@@ -3931,7 +3931,7 @@ h<!DOCTYPE html>
 
             // お祝いアニメーション: ピョンピョン跳ねてキラキラ降り注ぐ
             if (char.celebrating && char.celebrateTimer > 0) {
-                const timeElapsed = 5000 - char.celebrateTimer;
+                const timeElapsed = 30000 - char.celebrateTimer;
 
                 // ピョンピョン跳ねる（5秒間ずっと）
                 const jumpSpeed = 8; // 跳ねる速度
@@ -3983,9 +3983,9 @@ h<!DOCTYPE html>
                     });
                 }
 
-                // フェードアウト（最後の0.5秒）
-                if (timeElapsed > 4500) {
-                    const fade = (5000 - timeElapsed) / 500;
+                // フェードアウト（最後の2秒）
+                if (timeElapsed > 28000) {
+                    const fade = (30000 - timeElapsed) / 2000;
                     ctx.shadowBlur = glowIntensity * fade;
                     bob *= fade;
                 }
@@ -5115,7 +5115,7 @@ h<!DOCTYPE html>
                     });
                 }
                 char.celebrating = true;
-                char.celebrateTimer = 5000;
+                char.celebrateTimer = 30000;
             }
             unlockAchievement('first_vote');
 
