@@ -2676,14 +2676,14 @@ h<!DOCTYPE html>
                 }
             }
 
-            // CHANGE 4: Apply scale pulse effect
-            let scaleFactor = voteScale;
+            // Scale pulse effect（投票時の一時的な拡大演出）
+            let scaleFactor = 1;
             if (char.scalePulse && char.scalePulseTimer > 0) {
                 const pulsePhase = 1 - (char.scalePulseTimer / 1000);
-                scaleFactor = voteScale * (1 + 0.5 * (1 - Math.pow(pulsePhase, 2)));
+                scaleFactor = 1 + 0.5 * (1 - Math.pow(pulsePhase, 2));
             }
-            const scaledW = w * scaleFactor / voteScale;
-            const scaledH = h * scaleFactor / voteScale;
+            const scaledW = w * scaleFactor;
+            const scaledH = h * scaleFactor;
 
             // Draw character image (with drag wiggle animation)
             if (draggedChar === char) {
