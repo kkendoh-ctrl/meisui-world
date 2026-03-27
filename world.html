@@ -12,34 +12,7 @@ h<!DOCTYPE html>
     <script src="js/config.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <script>
-        firebase.initializeApp({
-            apiKey: "AIzaSyCitq3ZmZ2lbF_mPSermXvbEE77X0jJW2o",
-            authDomain: "meisui-world.firebaseapp.com",
-            databaseURL: "https://meisui-world-default-rtdb.firebaseio.com",
-            projectId: "meisui-world",
-            storageBucket: "meisui-world.firebasestorage.app",
-            messagingSenderId: "966808863030",
-            appId: "1:966808863030:web:a1b85eb17974162c673397"
-        });
-        const firebaseDb = firebase.database();
-        const votesRef = firebaseDb.ref('votes');
-
-        // Monitor connection state
-        firebaseDb.ref('.info/connected').on('value', (snap) => {
-            const indicator = document.getElementById('firebaseStatus');
-            if (indicator) {
-                if (snap.val()) {
-                    indicator.style.display = 'none'; // Hide when connected (don't distract)
-                } else {
-                    indicator.style.display = 'block';
-                    indicator.style.background = '#f44336';
-                    indicator.style.color = 'white';
-                    indicator.textContent = '⚠ オフライン - 投票が同期されません';
-                }
-            }
-        });
-    </script>
+    <script src="js/firebase.js"></script>
 </head>
 <body>
     <!-- Firebase connection indicator -->
@@ -3292,7 +3265,6 @@ h<!DOCTYPE html>
 
         // cycleStartVotes: この世界線が始まった時点の累計票数（Firebase保存）
         // 世界線ボタン押下時に現在のtotalVotesを保存する
-        var cycleStartVotes = 0;
 
         function getEffectiveVotes() {
             const eff = Math.max(0, totalVotes - cycleStartVotes);
@@ -3757,7 +3729,6 @@ h<!DOCTYPE html>
         }
 
         // ========== ENDING SEQUENCE (2100) ==========
-        var endingActive = false;
         var activeFwInterval = null;
         function showEnding() {
             if (endingActive) return;
@@ -3797,7 +3768,6 @@ h<!DOCTYPE html>
         }
 
         // World line offset stored in Firebase (does not change vote counts)
-        var worldLineOffset = 0;
         firebaseDb.ref('worldLineOffset').on('value', snap => {
             worldLineOffset = snap.val() || 0;
             updateYearDisplay();
@@ -3812,7 +3782,6 @@ h<!DOCTYPE html>
         });
 
         // Decoration offset: per-character vote offsets to reset trees/fish/buildings on world line change
-        var decorationOffset = { meisui: 0, tsutsuji: 0, meisui_chan: 0, bekabune: 0, asari: 0, ryoushi: 0 };
         firebaseDb.ref('stats/decorationOffset').on('value', snap => {
             const data = snap.val() || {};
             decorationOffset = {
