@@ -4814,10 +4814,10 @@ h<!DOCTYPE html>
         function checkReclamationEvolution(newYear) {
             const newStage = getReclamationStage(newYear);
             if (newStage > lastReclamationStage && lastReclamationStage !== 0) {
-                // 段階が上がった → 進化エフェクト発動
+                // 段階が上がった → イベントキューに追加（クイズ等の後に再生）
                 const stageInfo = reclamationStages[newStage];
                 if (stageInfo) {
-                    showReclamationEvolution(stageInfo);
+                    queueEvent(() => showReclamationEvolution(stageInfo));
                 }
             }
             lastReclamationStage = newStage;
@@ -4886,7 +4886,7 @@ h<!DOCTYPE html>
                     popup.style.transition = 'opacity 0.8s, transform 0.8s';
                     popup.style.opacity = '0';
                     popup.style.transform = 'translateX(-50%) translateY(-30px)';
-                    setTimeout(() => popup.remove(), 800);
+                    setTimeout(() => { popup.remove(); onEventDone(); }, 800);
                 }, 3500);
             }, 2000);
         }
