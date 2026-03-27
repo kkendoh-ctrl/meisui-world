@@ -3667,6 +3667,85 @@ h<!DOCTYPE html>
         }
         attachVoteListener();
 
+        // ============================================
+        // 外部投票検知（iPadからの投票をモニターで演出再生）
+        // ============================================
+        let lastVoteCharProcessed = null;
+        let remoteVoteInitialLoad = true;
+        firebaseDb.ref('stats/lastVoteChar').on('value', snap => {
+            const charType = snap.val();
+            if (!charType) return;
+
+            // 初回ロードはスキップ
+            if (remoteVoteInitialLoad) {
+                remoteVoteInitialLoad = false;
+                lastVoteCharProcessed = charType + '_' + Date.now();
+                return;
+            }
+
+            // この端末で投票中（castVote経由）なら無視（二重再生防止）
+            if (window.voteInProgress) return;
+
+            // 同じ投票を二重処理しない
+            const voteKey = charType + '_' + Date.now();
+            if (lastVoteCharProcessed === voteKey) return;
+            lastVoteCharProcessed = voteKey;
+
+            console.log('📡 外部投票検知:', charType);
+
+            // 投票前の状態を保存
+            const prevVotes = totalVotes - 1;
+            const oldLevel = getCurrentLevel();
+
+            // キャラお祝いパーティクル
+            const char = characters.find(c => c.type === charType);
+            if (char) {
+                for (let i = 0; i < 60; i++) {
+                    particles.push({
+                        x: char.x + (Math.random() - 0.5) * 60, y: char.y - 20,
+                        vx: (Math.random() - 0.5) * 3, vy: -1 - Math.random() * 3,
+                        rotation: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.1,
+                        size: 4 + Math.random() * 4, alpha: 1,
+                        color: ['#ff6b6b', '#ffa500', '#ffd700', '#ff69b4', '#87ceeb'][Math.floor(Math.random() * 5)],
+                        type: 'confetti', life: 120
+                    });
+                }
+                char.celebrating = true;
+                char.celebrateTimer = 30000;
+            }
+
+            playSound('vote');
+            window.voteInProgress = true;
+
+            // ①カットイン 2.5秒
+            showCutinAnimation(charType);
+            setTimeout(() => {
+                // ②投票済証 2秒
+                showVotedCertificate(charType);
+                setTimeout(() => {
+                    // 年代イベントをキューに積む
+                    const newYear = getCurrentYear();
+                    if (historicalEvents[newYear]) {
+                        queueEvent(() => showEraEvent(newYear));
+                    }
+                    // レベルアップチェック
+                    const newLevel = getCurrentLevel();
+                    if (newLevel.min > oldLevel.min) {
+                        queueEvent(() => { showLevelUpAnimation(newLevel); playSound('levelup'); });
+                    }
+                    // 建物アンロック
+                    checkBuildingUnlock(prevVotes);
+                    // イベントトリガー
+                    checkEventTrigger();
+                    // ③クイズ（回答→解説→playEventQueue）
+                    showQuizModal(charType);
+                    setTimeout(() => {
+                        window.voteInProgress = false;
+                    }, 1000);
+                }, 2000);
+            }, 2500);
+        });
+
         // Character metadata for voting modal
 
         // ============================================
@@ -3867,6 +3946,7 @@ h<!DOCTYPE html>
             // Reset built buildings and event tracking when decoration offset changes
             builtBuildings = [];
             localStorage.setItem('meisui_builtBuildings', '[]');
+            saveBuildingsToFirebase();
             if (typeof lastEventVotes !== 'undefined') lastEventVotes = 0;
         });
 
@@ -3960,6 +4040,7 @@ h<!DOCTYPE html>
                 // Reset built buildings
                 builtBuildings = [];
                 localStorage.setItem('meisui_builtBuildings', '[]');
+                saveBuildingsToFirebase();
                 endingActive = false;
                 playSound('vote');
             };
@@ -4610,17 +4691,37 @@ h<!DOCTYPE html>
         const buildingsList = [{"id": "house", "name": "おうち", "unlock_votes": 0, "happiness_bonus": 2, "service_bonus": 0, "category": "住居"}, {"id": "school", "name": "がっこう", "unlock_votes": 5, "happiness_bonus": 5, "service_bonus": 10, "category": "教育", "real_count": 9}, {"id": "park", "name": "こうえん", "unlock_votes": 10, "happiness_bonus": 8, "service_bonus": 5, "category": "環境", "real_count": 130}, {"id": "library", "name": "としょかん", "unlock_votes": 20, "happiness_bonus": 7, "service_bonus": 8, "category": "文化", "real_count": 7}, {"id": "hospital", "name": "びょういん", "unlock_votes": 35, "happiness_bonus": 10, "service_bonus": 15, "category": "医療"}, {"id": "station", "name": "えき", "unlock_votes": 50, "happiness_bonus": 5, "service_bonus": 12, "category": "交通", "real_note": "浦安駅・新浦安駅・舞浜駅"}, {"id": "fire_station", "name": "しょうぼうしょ", "unlock_votes": 70, "happiness_bonus": 3, "service_bonus": 15, "category": "防災", "real_count": 4, "disaster_reduction": 0.3}, {"id": "community_center", "name": "こうみんかん", "unlock_votes": 90, "happiness_bonus": 6, "service_bonus": 10, "category": "交流", "real_count": 7}, {"id": "museum", "name": "はくぶつかん", "unlock_votes": 120, "happiness_bonus": 8, "service_bonus": 8, "category": "文化", "real_note": "浦安市郷土博物館"}, {"id": "city_hall", "name": "しやくしょ", "unlock_votes": 150, "happiness_bonus": 3, "service_bonus": 20, "category": "行政", "policy_multiplier": 1.2}, {"id": "cultural_hall", "name": "ぶんかかいかん", "unlock_votes": 200, "happiness_bonus": 10, "service_bonus": 12, "category": "文化"}, {"id": "sanbanze", "name": "さんばんぜ", "unlock_votes": 250, "happiness_bonus": 15, "service_bonus": 5, "category": "自然", "special": true}];
         
         let builtBuildings = JSON.parse(localStorage.getItem('meisui_builtBuildings') || '[]');
-        
+
+        // Firebase同期: 建物アンロック状態を全端末で共有
+        firebaseDb.ref('stats/builtBuildings').on('value', snap => {
+            const data = snap.val();
+            if (data && Array.isArray(data)) {
+                builtBuildings = data;
+                localStorage.setItem('meisui_builtBuildings', JSON.stringify(builtBuildings));
+            }
+        });
+
+        function saveBuildingsToFirebase() {
+            firebaseDb.ref('stats/builtBuildings').set(builtBuildings).catch(err => {
+                console.error('建物同期失敗:', err);
+            });
+        }
+
         function checkBuildingUnlock(prevVotes) {
             const decoTotal = Object.values(decorationOffset || {}).reduce((a, b) => a + b, 0);
             const adjustedTotal = totalVotes - decoTotal;
+            let newUnlock = false;
             buildingsList.forEach(building => {
                 if (prevVotes < building.unlock_votes && adjustedTotal >= building.unlock_votes && !builtBuildings.includes(building.id)) {
                     builtBuildings.push(building.id);
-                    localStorage.setItem('meisui_builtBuildings', JSON.stringify(builtBuildings));
+                    newUnlock = true;
                     queueEvent(() => showBuildingNotification(building));
                 }
             });
+            if (newUnlock) {
+                localStorage.setItem('meisui_builtBuildings', JSON.stringify(builtBuildings));
+                saveBuildingsToFirebase();
+            }
         }
         
         function showBuildingNotification(building) {

@@ -378,6 +378,9 @@
         return (current || 0) + 1;
       }).then(result => {
         if (result.committed) {
+          // モニター側に投票キャラを通知
+          database.ref('stats/lastVoteChar').set(characterKey);
+          database.ref('stats/lastVoteTime').set(Date.now());
           showThankYou();
         }
       }).catch(error => {
