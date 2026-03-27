@@ -245,15 +245,39 @@ h<!DOCTYPE html>
             currentBgmKey = newKey;
             const newTrack = bgmTracks[newKey];
             newTrack.volume = 0;
-            newTrack.play().catch(() => {}); // ユーザー操作前はエラー出るので無視
-            const fadeIn = setInterval(() => {
-                if (newTrack.volume < 0.25) {
-                    newTrack.volume = Math.min(0.3, newTrack.volume + 0.05);
-                } else {
-                    clearInterval(fadeIn);
-                }
-            }, 100);
+            newTrack.play().then(() => {
+                // 再生成功 → フェードイン
+                const fadeIn = setInterval(() => {
+                    if (newTrack.volume < 0.25) {
+                        newTrack.volume = Math.min(0.3, newTrack.volume + 0.05);
+                    } else {
+                        clearInterval(fadeIn);
+                    }
+                }, 100);
+            }).catch(() => {
+                // 自動再生ブロック → ユーザー操作時に再試行
+                bgmPendingPlay = true;
+            });
         }
+
+        // 自動再生ブロック対策: ユーザー操作で再試行
+        let bgmPendingPlay = false;
+        document.addEventListener('click', function bgmRetry() {
+            if (bgmPendingPlay && currentBgmKey) {
+                bgmPendingPlay = false;
+                const track = bgmTracks[currentBgmKey];
+                track.volume = 0;
+                track.play().then(() => {
+                    const fadeIn = setInterval(() => {
+                        if (track.volume < 0.25) {
+                            track.volume = Math.min(0.3, track.volume + 0.05);
+                        } else {
+                            clearInterval(fadeIn);
+                        }
+                    }, 100);
+                }).catch(() => {});
+            }
+        });
 
         // サウンドトグルにBGMも連動
         const origToggleSound = toggleSound;
@@ -3928,6 +3952,12 @@ h<!DOCTYPE html>
         // 世界線ボタン押下時にtotalVotesを保存して次の世界線をリセット
         firebaseDb.ref('stats/cycleStartVotes').on('value', snap => {
             cycleStartVotes = snap.val() || 0;
+            // cycleStartVotesがtotalVotesを超えていたら修正（データ不整合防止）
+            if (cycleStartVotes > totalVotes && totalVotes > 0) {
+                console.warn('⚠️ cycleStartVotes(' + cycleStartVotes + ') > totalVotes(' + totalVotes + '), fixing...');
+                cycleStartVotes = totalVotes;
+                firebaseDb.ref('stats/cycleStartVotes').set(totalVotes);
+            }
             updateYearDisplay();
         });
 
