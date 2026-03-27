@@ -4760,7 +4760,7 @@ h<!DOCTYPE html>
         // イベントシステム（V3新機能）
         // ============================================
         
-        let lastEventVotes = 0;
+        var lastEventVotes = 0;
         
         const goodEvents = [{"name": "おまつりだ！", "trigger": "random", "effect": "happiness+10", "probability": 0.1}, {"name": "あたらしいお店がオープン", "trigger": "random", "effect": "tax_revenue+5%", "probability": 0.08}, {"name": "三番瀬にめずらしい鳥が来た", "trigger": "votes>50", "effect": "population+2", "probability": 0.05}, {"name": "うらやすシティマラソン開催", "trigger": "random", "effect": "happiness+8", "probability": 0.06}];
         const challengeEvents = [{"name": "たいふうが きた！", "trigger": "random", "effect": "infrastructure_decay+10", "mitigation": "fire_station", "probability": 0.08}, {"name": "えきまえが こんざつ！", "trigger": "population>30", "effect": "happiness-5", "mitigation": "station", "probability": 0.07}, {"name": "こうれいかが すすんだ", "trigger": "votes>100", "effect": "service_demand+15%", "mitigation": "hospital", "probability": 0.06}, {"name": "じしん！えきじょうかに ちゅうい", "trigger": "random", "effect": "infrastructure_decay+15", "mitigation": "fire_station", "probability": 0.04, "urayasu_special": true}];
