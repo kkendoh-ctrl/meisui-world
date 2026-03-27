@@ -5388,7 +5388,7 @@ h<!DOCTYPE html>
                 const img = document.createElement('img');
                 img.src = charImg.src;
                 // 画面高さの5倍をキャラ画像サイズとする
-                const cutinCharSize = Math.max(window.innerWidth, window.innerHeight) * 5;
+                const cutinCharSize = Math.max(window.innerWidth, window.innerHeight) * 2.5;
                 img.style.cssText = 'width:' + cutinCharSize + 'px;height:auto;filter:drop-shadow(0 0 60px ' + charColor + ') drop-shadow(0 0 120px ' + charColor + ') drop-shadow(0 0 200px white);animation:cutinCharKira 0.6s ease-in-out infinite alternate;';
                 charDiv.appendChild(img);
                 overlay.appendChild(charDiv);
