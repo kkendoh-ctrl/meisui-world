@@ -84,6 +84,7 @@ h<!DOCTYPE html>
         <div style="flex-shrink:0;border-top:2px solid rgba(0,0,0,0.1);padding:8px 10px 8px;">
             <div style="display:flex;gap:6px;margin-bottom:6px;">
                 <button onclick="openRankPopup()" style="flex:1;font-size:13px;color:#fff;background:linear-gradient(135deg,#f7971e,#ffd200);border:none;padding:8px 0;border-radius:8px;cursor:pointer;font-weight:bold;">🏆 街ランク</button>
+                <button onclick="showTutorial()" style="flex:1;font-size:13px;color:#fff;background:linear-gradient(135deg,#42a5f5,#7e57c2);border:none;padding:8px 0;border-radius:8px;cursor:pointer;font-weight:bold;">📖 あそびかた</button>
                 <button onclick="if(confirm('⚠️ 全データをリセットしますか？（投票・世界線・すべて初期化）')){votesRef.set({meisui:0,meisui_chan:0,tsutsuji:0,bekabune:0,asari:0,ryoushi:0});firebaseDb.ref('worldLineOffset').set(0);firebaseDb.ref('stats/cycleStartVotes').set(0);firebaseDb.ref('stats/decorationOffset').set({meisui:0,tsutsuji:0,meisui_chan:0,bekabune:0,asari:0,ryoushi:0});endingActive=false;builtBuildings=[];localStorage.setItem('meisui_builtBuildings','[]');}" style="flex:1;font-size:11px;color:#fff;background:#78909c;border:none;padding:5px 0;border-radius:6px;cursor:pointer;font-weight:bold;">🔄 リセット</button>
             </div>
             <div style="display:flex;gap:3px;">
@@ -4503,6 +4504,92 @@ h<!DOCTYPE html>
             if (v >= 3) return 2;
             if (v >= 1) return 1;
             return 0;
+        }
+
+        // ============================================
+        // チュートリアル（あそびかた）
+        // ============================================
+        function showTutorial() {
+            // 既存のチュートリアルがあれば閉じる
+            const existing = document.getElementById('tutorialOverlay');
+            if (existing) { existing.remove(); return; }
+
+            const overlay = document.createElement('div');
+            overlay.id = 'tutorialOverlay';
+            overlay.style.cssText = `
+                position:fixed;top:0;left:0;right:0;bottom:0;z-index:600;
+                display:flex;align-items:center;justify-content:center;
+                background:rgba(0,0,0,0.6);animation:eraEventPop 0.3s ease;
+            `;
+            overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+            const panel = document.createElement('div');
+            panel.style.cssText = `
+                background:white;border-radius:20px;padding:30px;max-width:520px;width:90%;
+                max-height:80vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.3);
+                font-family:'Hiragino Sans','Meiryo',sans-serif;position:relative;
+            `;
+            panel.innerHTML = `
+                <button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:10px;right:15px;background:none;border:none;font-size:24px;cursor:pointer;color:#999;">✕</button>
+                <h2 style="text-align:center;font-size:24px;margin:0 0 20px;color:#333;">📖 あそびかた</h2>
+
+                <div style="background:#fff3e0;border-radius:12px;padding:16px;margin-bottom:14px;">
+                    <div style="font-size:18px;font-weight:bold;margin-bottom:8px;">🗳️ ステップ１：投票しよう</div>
+                    <div style="font-size:14px;color:#555;line-height:1.8;">
+                        「投票する！」ボタンを押して<br>
+                        すきなキャラクターに投票しよう！<br>
+                        <span style="color:#e65100;font-weight:bold;">だれに入れたかはヒミツだよ</span>
+                    </div>
+                </div>
+
+                <div style="background:#e8f5e9;border-radius:12px;padding:16px;margin-bottom:14px;">
+                    <div style="font-size:18px;font-weight:bold;margin-bottom:8px;">🌳 ステップ２：街が変わる！</div>
+                    <div style="font-size:14px;color:#555;line-height:1.8;">
+                        投票すると街に変化がおきるよ！<br>
+                        🌳 木が増えたり 🌺 花が咲いたり<br>
+                        🐟 魚市場ができたり 🏮 おまつりが始まったり<br>
+                        <span style="color:#2e7d32;font-weight:bold;">キャラクターごとに効果がちがう！</span>
+                    </div>
+                </div>
+
+                <div style="background:#e3f2fd;border-radius:12px;padding:16px;margin-bottom:14px;">
+                    <div style="font-size:18px;font-weight:bold;margin-bottom:8px;">📚 ステップ３：クイズに挑戦</div>
+                    <div style="font-size:14px;color:#555;line-height:1.8;">
+                        投票のあとにクイズが出るよ！<br>
+                        浦安のことや選挙のことを学ぼう<br>
+                        <span style="color:#1565c0;font-weight:bold;">正解でも不正解でもOK！</span>
+                    </div>
+                </div>
+
+                <div style="background:#fce4ec;border-radius:12px;padding:16px;margin-bottom:14px;">
+                    <div style="font-size:18px;font-weight:bold;margin-bottom:8px;">⏰ ステップ４：時代がすすむ</div>
+                    <div style="font-size:14px;color:#555;line-height:1.8;">
+                        1票 = 10年！ 投票で浦安の歴史をたどるよ<br>
+                        1889年（むかし）→ 2100年（みらい）<br>
+                        <span style="color:#c62828;font-weight:bold;">海が埋め立てられて街が大きくなる！</span>
+                    </div>
+                </div>
+
+                <div style="background:#f3e5f5;border-radius:12px;padding:16px;margin-bottom:14px;">
+                    <div style="font-size:18px;font-weight:bold;margin-bottom:8px;">🌀 ステップ５：世界線</div>
+                    <div style="font-size:14px;color:#555;line-height:1.8;">
+                        2100年に到達すると「次の世界線」へ！<br>
+                        1889年に戻って何度でもあそべるよ<br>
+                        <span style="color:#7b1fa2;font-weight:bold;">世界線ごとにランクが記録される！</span>
+                    </div>
+                </div>
+
+                <div style="text-align:center;margin-top:16px;">
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()" style="
+                        font-size:18px;font-weight:bold;color:#fff;
+                        background:linear-gradient(135deg,#42a5f5,#7e57c2);
+                        border:none;padding:14px 50px;border-radius:30px;cursor:pointer;
+                        box-shadow:0 4px 15px rgba(66,165,245,0.4);
+                    ">わかった！</button>
+                </div>
+            `;
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
         }
 
         function openRankPopup() {
