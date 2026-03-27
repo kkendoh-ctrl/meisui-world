@@ -189,12 +189,81 @@ h<!DOCTYPE html>
             }
         }
 
+
+        // ============================================
+        // BGM System — 年代別BGM自動切替
+        // ============================================
+        const bgmTracks = {
+            village: new Audio('sounds/bgm_village.mp3'),  // 1889-1959
+            growth: new Audio('sounds/bgm_growth.mp3'),    // 1969-1989
+            modern: new Audio('sounds/bgm_modern.mp3'),    // 1999-2069
+            future: new Audio('sounds/bgm_future.mp3'),    // 2079-2100
+        };
+        // 全トラックをループ設定・音量調整
+        Object.values(bgmTracks).forEach(audio => {
+            audio.loop = true;
+            audio.volume = 0.3;
+        });
+
+        let currentBgmKey = null;
+        let bgmEnabled = true;
+
+        function getBgmKeyForYear(year) {
+            if (year <= 1959) return 'village';
+            if (year <= 1989) return 'growth';
+            if (year <= 2069) return 'modern';
+            return 'future';
+        }
+
+        function updateBgm() {
+            if (!bgmEnabled || !soundEnabled) {
+                // BGMまたはサウンドが無効 → 全停止
+                Object.values(bgmTracks).forEach(a => { a.pause(); });
+                currentBgmKey = null;
+                return;
+            }
+            const year = getCurrentYear();
+            const newKey = getBgmKeyForYear(year);
+            if (newKey === currentBgmKey) return; // 同じ曲なら何もしない
+
+            // 現在の曲をフェードアウト
+            if (currentBgmKey && bgmTracks[currentBgmKey]) {
+                const oldTrack = bgmTracks[currentBgmKey];
+                const fadeOut = setInterval(() => {
+                    if (oldTrack.volume > 0.05) {
+                        oldTrack.volume = Math.max(0, oldTrack.volume - 0.05);
+                    } else {
+                        oldTrack.pause();
+                        oldTrack.volume = 0.3;
+                        oldTrack.currentTime = 0;
+                        clearInterval(fadeOut);
+                    }
+                }, 100);
+            }
+
+            // 新しい曲をフェードイン
+            currentBgmKey = newKey;
+            const newTrack = bgmTracks[newKey];
+            newTrack.volume = 0;
+            newTrack.play().catch(() => {}); // ユーザー操作前はエラー出るので無視
+            const fadeIn = setInterval(() => {
+                if (newTrack.volume < 0.25) {
+                    newTrack.volume = Math.min(0.3, newTrack.volume + 0.05);
+                } else {
+                    clearInterval(fadeIn);
+                }
+            }, 100);
+        }
+
+        // サウンドトグルにBGMも連動
+        const origToggleSound = toggleSound;
         function toggleSound() {
             soundEnabled = !soundEnabled;
             const btn = document.getElementById('soundToggleBtn');
             if (btn) {
                 btn.textContent = soundEnabled ? '🔊' : '🔇';
             }
+            updateBgm();
         }
 
         // Character image data URLs
@@ -624,6 +693,9 @@ h<!DOCTYPE html>
                         welcome.style.display = 'none';
                     }, 500);
                     playSound('vote');
+                    // スタート時にBGM開始（ユーザー操作後でないと再生不可）
+                    initAudioContext();
+                    updateBgm();
                 });
             }
         }
@@ -3294,6 +3366,8 @@ h<!DOCTYPE html>
             const wlEl = document.getElementById('worldLineText');
             if (yearEl) yearEl.textContent = year + '年';
             if (wlEl) wlEl.textContent = '第' + worldLine + '世界線';
+            // BGM切替
+            updateBgm();
             // 埋め立て進化チェック（初回ロード時はスキップ）
             if (!isInitialLoad) {
                 checkReclamationEvolution(year);
