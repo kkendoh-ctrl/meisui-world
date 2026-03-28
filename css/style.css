@@ -1130,7 +1130,7 @@
         #timelineBar {
             position: fixed;
             bottom: 0;
-            left: 340px;
+            left: 0;
             right: 0;
             z-index: 200;
             height: 56px;
