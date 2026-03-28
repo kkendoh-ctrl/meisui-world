@@ -4053,10 +4053,13 @@ h<!DOCTYPE html>
             barsEl.innerHTML = html;
         }
 
-        // Vote button and modal event listeners
-        document.getElementById('voteBtn').addEventListener('click', openVoteModal);
-        document.getElementById('voteModalOverlay').addEventListener('click', closeVoteModal);
-        document.getElementById('voteCloseBtn').addEventListener('click', closeVoteModal);
+        // 投票UIはiPad(vote.html)に移行済み。リスナーはnullチェック付きで残す
+        const _voteBtn = document.getElementById('voteBtn');
+        const _voteOverlay = document.getElementById('voteModalOverlay');
+        const _voteClose = document.getElementById('voteCloseBtn');
+        if (_voteBtn) _voteBtn.addEventListener('click', openVoteModal);
+        if (_voteOverlay) _voteOverlay.addEventListener('click', closeVoteModal);
+        if (_voteClose) _voteClose.addEventListener('click', closeVoteModal);
 
         // Initialize bar graph
         updateBarGraph();
