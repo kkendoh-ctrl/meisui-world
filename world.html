@@ -1439,6 +1439,10 @@ h<!DOCTYPE html>
         // 海系: 海洋生物、屋形船 → 海・川のみ
         const marinePositions = generatePositions(4004, 30, 400, 1400, 400, 1050, 'sea');
         const boatPositions = generatePositions(5005, 20, 400, 1200, 500, 1000, 'sea');
+        // あさり → 浅瀬・干潟エリア（海面近く）
+        const asariClamPositions = generatePositions(7007, 40, 300, 1200, 800, 1060, 'sea');
+        // のり養殖フレーム → 海上（浦安の伝統産業エリア）
+        const noriFramePositions = generatePositions(8008, 30, 150, 900, 700, 1050, 'sea');
 
         // 固定座標オブジェクトの位置（fixed-positions.jsonから読み込み、なければデフォルト値）
         const fixedPos = {
@@ -1694,14 +1698,26 @@ h<!DOCTYPE html>
 
             // ========== 5. 屋形船 → 海上祭り ==========
             if (vA > 0) {
-                // 屋形船
-                const count = Math.min(vA * 2, boatPositions.length);
-                for (let i = 0; i < count; i++) {
-                    const p = boatPositions[i];
-                    const isNew = newObjectAnim && newObjectAnim.charType === 'asari' && i >= count - 2;
+                // あさり（1票から浅瀬に現れる）
+                const clamCount = Math.min(vA * 4, asariClamPositions.length);
+                for (let i = 0; i < clamCount; i++) {
+                    const p = asariClamPositions[i];
+                    const isNew = newObjectAnim && newObjectAnim.charType === 'asari' && i >= clamCount - 4;
                     if (isNew) { const b = calcBounce(now - newObjectAnim.startTime, ANIM_DURATION); ctx.save(); ctx.translate(p.x,p.y); ctx.scale(b,b); ctx.translate(-p.x,-p.y); }
-                    drawYakatabune(ctx, p.x, p.y, p.seed, i, now);
+                    drawAsariClam(ctx, p.x, p.y, p.seed, now);
                     if (isNew) ctx.restore();
+                }
+
+                // 屋形船（2票以上）
+                if (vA >= 2) {
+                    const count = Math.min((vA - 1) * 2, boatPositions.length);
+                    for (let i = 0; i < count; i++) {
+                        const p = boatPositions[i];
+                        const isNew = newObjectAnim && newObjectAnim.charType === 'asari' && i >= count - 2;
+                        if (isNew) { const b = calcBounce(now - newObjectAnim.startTime, ANIM_DURATION); ctx.save(); ctx.translate(p.x,p.y); ctx.scale(b,b); ctx.translate(-p.x,-p.y); }
+                        drawYakatabune(ctx, p.x, p.y, p.seed, i, now);
+                        if (isNew) ctx.restore();
+                    }
                 }
 
                 // 5票以上で提灯が海岸線に並ぶ
@@ -1737,8 +1753,18 @@ h<!DOCTYPE html>
                 }
             }
 
-            // ========== 6. 漁師 → 魚市場・商業エリア ==========
+            // ========== 6. 漁師 → のり養殖・魚市場・商業エリア ==========
             if (vR > 0) {
+                // のり養殖フレーム（1票から海に現れる　浦安の伝統産業）
+                const noriCount = Math.min(vR * 3, noriFramePositions.length);
+                for (let i = 0; i < noriCount; i++) {
+                    const p = noriFramePositions[i];
+                    const isNew = newObjectAnim && newObjectAnim.charType === 'ryoushi' && i >= noriCount - 3;
+                    if (isNew) { const b = calcBounce(now - newObjectAnim.startTime, ANIM_DURATION); ctx.save(); ctx.translate(p.x,p.y); ctx.scale(b,b); ctx.translate(-p.x,-p.y); }
+                    drawNoriFrame(ctx, p.x, p.y, p.seed, now);
+                    if (isNew) ctx.restore();
+                }
+
                 // 商業エリアの活気オーバーレイ
                 const bustleIntensity = Math.min(vR / 15, 1);
 
@@ -2546,6 +2572,105 @@ h<!DOCTYPE html>
                 ctx.textAlign = 'center';
                 ctx.fillText('浜焼き', x, y + 18);
             }
+        }
+
+        // ===== あさり（貝） =====
+        function drawAsariClam(ctx, x, y, seed, now) {
+            const rng = (n) => ((seed * 9301 + n * 49297) % 233280) / 233280;
+            const size = 8 + rng(1) * 6; // 8〜14px
+            const wobble = Math.sin(now * 0.001 + seed * 2.3) * 1.5; // 波でゆらゆら
+
+            ctx.save();
+            ctx.translate(x, y + wobble);
+
+            // 貝殻（2枚）
+            const colors = ['#d4a96a', '#c8956a', '#bfa090', '#e8c88a'];
+            const shellColor = colors[seed % colors.length];
+            ctx.fillStyle = shellColor;
+
+            // 右殻
+            ctx.beginPath();
+            ctx.ellipse(size * 0.4, 0, size * 0.55, size * 0.38, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            // 左殻
+            ctx.beginPath();
+            ctx.ellipse(-size * 0.4, 0, size * 0.55, size * 0.38, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 貝殻の模様（縦筋）
+            ctx.strokeStyle = 'rgba(100,60,20,0.35)';
+            ctx.lineWidth = 0.8;
+            for (let i = -2; i <= 2; i++) {
+                ctx.beginPath();
+                ctx.moveTo(size * 0.4 + i * size * 0.12, -size * 0.28);
+                ctx.quadraticCurveTo(size * 0.4 + i * size * 0.08, 0, size * 0.4 + i * size * 0.12, size * 0.28);
+                ctx.stroke();
+            }
+
+            // つなぎ目（丁番部分）
+            ctx.fillStyle = '#8b6040';
+            ctx.beginPath();
+            ctx.arc(0, 0, size * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // ===== のり養殖フレーム =====
+        function drawNoriFrame(ctx, x, y, seed, now) {
+            const rng = (n) => ((seed * 9301 + n * 49297) % 233280) / 233280;
+            const w = 28 + rng(1) * 14; // 幅28〜42px
+            const h = 18 + rng(2) * 8;  // 高さ18〜26px
+            const sway = Math.sin(now * 0.0008 + seed * 1.7) * 1.5; // 水流でゆれる
+
+            ctx.save();
+            ctx.translate(x, y + sway);
+
+            // のりシート（黒緑）
+            const noriAlpha = 0.65 + Math.sin(now * 0.0012 + seed) * 0.1;
+            ctx.fillStyle = `rgba(20, 50, 20, ${noriAlpha})`;
+            ctx.fillRect(-w / 2, -h / 2, w, h);
+
+            // のりの光沢（濡れた感じ）
+            ctx.fillStyle = 'rgba(60, 120, 60, 0.25)';
+            ctx.fillRect(-w / 2 + 2, -h / 2 + 2, w * 0.4, h * 0.35);
+
+            // 格子模様
+            ctx.strokeStyle = 'rgba(0, 30, 0, 0.5)';
+            ctx.lineWidth = 0.6;
+            const cols = Math.floor(w / 7);
+            const rows = Math.floor(h / 6);
+            for (let c = 1; c < cols; c++) {
+                ctx.beginPath();
+                ctx.moveTo(-w / 2 + c * (w / cols), -h / 2);
+                ctx.lineTo(-w / 2 + c * (w / cols), h / 2);
+                ctx.stroke();
+            }
+            for (let r = 1; r < rows; r++) {
+                ctx.beginPath();
+                ctx.moveTo(-w / 2, -h / 2 + r * (h / rows));
+                ctx.lineTo(w / 2, -h / 2 + r * (h / rows));
+                ctx.stroke();
+            }
+
+            // 支柱（木の棒）
+            ctx.strokeStyle = '#8b5e2e';
+            ctx.lineWidth = 2.5;
+            const poleCount = 3;
+            for (let p = 0; p < poleCount; p++) {
+                const px = -w / 2 + (p / (poleCount - 1)) * w;
+                ctx.beginPath();
+                ctx.moveTo(px, -h / 2 - 6);
+                ctx.lineTo(px, h / 2 + 4);
+                ctx.stroke();
+                // 棒の先端
+                ctx.fillStyle = '#6b4020';
+                ctx.beginPath();
+                ctx.arc(px, -h / 2 - 6, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
         }
 
         // ===== 大きな魚市場 =====
