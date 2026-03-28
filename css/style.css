@@ -1009,6 +1009,8 @@
             position: fixed;
             font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
             pointer-events: auto;
+            touch-action: manipulation;
+            cursor: pointer;
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
             max-width: 500px;

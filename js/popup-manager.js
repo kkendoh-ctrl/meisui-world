@@ -63,11 +63,17 @@ class PopupManager {
         document.body.appendChild(wrapper);
         this.active[type] = { el: wrapper, options, onDone };
 
-        // タップで即消去
+        // タップで即消去（touchend + click 両対応、二重発火防止）
         if (tapToDismiss) {
-            wrapper.addEventListener('click', () => {
+            let dismissed = false;
+            const onDismissTap = (e) => {
+                if (dismissed) return;
+                dismissed = true;
+                e.preventDefault();
                 this.dismiss(type);
-            }, { once: true });
+            };
+            wrapper.addEventListener('touchend', onDismissTap, { once: true, passive: false });
+            wrapper.addEventListener('click', onDismissTap, { once: true });
         }
 
         // 自動消去タイマー
