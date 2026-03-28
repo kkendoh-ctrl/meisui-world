@@ -1461,11 +1461,17 @@ h<!DOCTYPE html>
         };
         // fixed-positions.json があれば座標を上書き
         fetch('fixed-positions.json').then(r => r.json()).then(data => {
+            // fixedPosオブジェクトの座標を上書き
             Object.keys(data).forEach(id => {
                 if (fixedPos[id]) { fixedPos[id].x = data[id].x; fixedPos[id].y = data[id].y; }
             });
-            console.log('📍 固定座標読み込み完了');
-        }).catch(() => { /* JSONがなければデフォルト値を使用 */ });
+            // landmarks配列の座標も上書き（"lm_名前" 形式のキーで管理）
+            landmarks.forEach(lm => {
+                const key = 'lm_' + lm.name;
+                if (data[key]) { lm.x = data[key].x; lm.y = data[key].y; }
+            });
+            console.log('📍 固定座標読み込み完了', Object.keys(data).length, '個');
+        }).catch(err => { console.warn('固定座標JSON未使用（デフォルト値）:', err); });
 
         // 1票=1オブジェクト出現アニメーション
         let newObjectAnim = null; // { charType, startTime }
