@@ -600,9 +600,69 @@ h<!DOCTYPE html>
         let camera = {
             zoomX: 1, zoomY: 1,
             targetZoomX: 1, targetZoomY: 1,
-            baseZoomX: 1, baseZoomY: 1, // store the fit values for zoom reset
-            userZoom: 1, targetUserZoom: 1, // user zoom multiplier on top of base
+            baseZoomX: 1, baseZoomY: 1,
+            userZoom: 1, targetUserZoom: 1,
+            // ズームアニメーション用
+            focusX: MAP_W / 2, focusY: MAP_H / 2,  // ズーム先マップ座標
+            animProgress: 0,    // 0=通常, 1=最大ズーム
+            targetZoom: 2.5,    // ズーム倍率
+            animState: 'idle',  // idle / zoom_in / hold / zoom_out
+            animTimer: 0,
         };
+
+        // イージング関数（加減速が自然）
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        // カメラズームアニメーション更新
+        function updateCameraAnimation(deltaTime) {
+            if (camera.animState === 'idle') return;
+            camera.animTimer -= deltaTime;
+
+            if (camera.animState === 'zoom_in') {
+                camera.animProgress = Math.min(1, camera.animProgress + deltaTime / 500);
+                if (camera.animProgress >= 1) {
+                    camera.animProgress = 1;
+                    camera.animState = 'hold';
+                    camera.animTimer = 1500;
+                }
+            } else if (camera.animState === 'hold') {
+                if (camera.animTimer <= 0) {
+                    camera.animState = 'zoom_out';
+                }
+            } else if (camera.animState === 'zoom_out') {
+                camera.animProgress = Math.max(0, camera.animProgress - deltaTime / 500);
+                if (camera.animProgress <= 0) {
+                    camera.animProgress = 0;
+                    camera.animState = 'idle';
+                }
+            }
+        }
+
+        // 指定キャラのエリアにカメラをズーム
+        function zoomToCharArea(charType) {
+            if (camera.animState !== 'idle') return;
+
+            // sparkleAreasはdrawVoteEffects内で定義されているので、ここでも同じ座標を使う
+            const zoomTargets = {
+                meisui: { x: 620, y: 250 },
+                tsutsuji: { x: 500, y: 300 },
+                meisui_chan: { x: 1000, y: 400 },
+                bekabune: { x: 1100, y: 600 },
+                asari: { x: 840, y: 830 },
+                ryoushi: { x: 720, y: 670 },
+            };
+
+            const target = zoomTargets[charType];
+            if (!target) return;
+
+            camera.focusX = target.x;
+            camera.focusY = target.y;
+            camera.animProgress = 0;
+            camera.animState = 'zoom_in';
+            camera.animTimer = 0;
+        }
         function fitMapToScreen() {
             // Stretch to fill: X and Y scale independently
             camera.baseZoomX = W / MAP_W;
@@ -2879,9 +2939,12 @@ h<!DOCTYPE html>
             if (ambientPhase > 0.75) {
                 updateFireflies();
             }
-            // Camera fixed (no user zoom — stretch to fill only)
+            // カメラ基本値
             camera.zoomX = camera.baseZoomX;
             camera.zoomY = camera.baseZoomY;
+
+            // ズームアニメーション更新
+            updateCameraAnimation(deltaTime);
 
             // Clear canvas with sky gradient
             const gradient = ctx.createLinearGradient(0, 0, 0, H);
@@ -2889,13 +2952,18 @@ h<!DOCTYPE html>
             gradient.addColorStop(1, '#e0f6ff');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, W, H);
-            
+
             // V5 Features: Draw clouds on sky
             updateAndDrawClouds(now);
 
-            // Apply camera transform (stretch to fill screen)
+            // カメラ変換（ズームアニメーション対応）
             ctx.save();
-            ctx.scale(camera.zoomX, camera.zoomY);
+            const easedT = easeInOutCubic(camera.animProgress);
+            const zMul = 1 + (camera.targetZoom - 1) * easedT;
+            const camTx = (W / 2 - camera.focusX * camera.baseZoomX * zMul) * easedT;
+            const camTy = (H / 2 - camera.focusY * camera.baseZoomY * zMul) * easedT;
+            ctx.translate(camTx, camTy);
+            ctx.scale(camera.baseZoomX * zMul, camera.baseZoomY * zMul);
 
             // Draw map based on current year
             const currentYear = getCurrentYear();
@@ -3347,8 +3415,9 @@ h<!DOCTYPE html>
             // ①カットイン 2.5秒
             showCutinAnimation(charType);
             setTimeout(() => {
-                // ②投票済証 2秒
+                // ②投票済証 2秒 + マップズーム演出
                 showVotedCertificate(charType);
+                zoomToCharArea(charType);
                 setTimeout(() => {
                     // 投票効果フィードバック（最初に表示）
                     queueEvent(() => showVoteEffect(charType));
@@ -3452,8 +3521,9 @@ h<!DOCTYPE html>
             // ①カットイン 2.5秒
             showCutinAnimation(charType);
             setTimeout(() => {
-                // ②投票済証 2秒
+                // ②投票済証 2秒 + マップズーム演出
                 showVotedCertificate(charType);
+                zoomToCharArea(charType);
                 setTimeout(() => {
                     // ③クイズ（ユーザーが回答するまで待つ）
                     // クイズ完了後に showExplanationCard → playEventQueue が呼ばれる
