@@ -122,25 +122,9 @@
         }
 
         /* VOTING SYSTEM STYLES */
+        /* 投票ボタンはiPad(vote.html)に移行済み。大画面では非表示 */
         #voteBtn {
-            position: fixed;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-            padding: 12px 36px;
-            border: none;
-            border-radius: 24px;
-            box-shadow: 0 4px 20px rgba(238, 90, 36, 0.4);
-            cursor: pointer;
-            z-index: 200;
-            font-family: "Hiragino Sans", sans-serif;
-            animation: voteBtnPulse 2s ease-in-out infinite;
-            text-align: center;
-            white-space: nowrap;
+            display: none !important;
         }
 
         @keyframes voteBtnPulse {
