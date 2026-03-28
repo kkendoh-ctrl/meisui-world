@@ -1441,6 +1441,32 @@ h<!DOCTYPE html>
         const marinePositions = generatePositions(4004, 30, 400, 1400, 400, 1050, 'sea');
         const boatPositions = generatePositions(5005, 20, 400, 1200, 500, 1000, 'sea');
 
+        // 固定座標オブジェクトの位置（fixed-positions.jsonから読み込み、なければデフォルト値）
+        const fixedPos = {
+            lighthouse: { x: 1150, y: 500 },
+            marina: { x: 1150, y: 650 },
+            whale: { x: 1000, y: 900 },
+            coral_1: { x: 200, y: MAP_H - 30 }, coral_2: { x: 350, y: MAP_H - 25 },
+            coral_3: { x: 550, y: MAP_H - 35 }, coral_4: { x: 750, y: MAP_H - 28 },
+            coral_5: { x: 1000, y: MAP_H - 32 }, coral_6: { x: 1200, y: MAP_H - 26 },
+            coral_7: { x: 1350, y: MAP_H - 30 },
+            firework_1: { x: 400, y: 100 }, firework_2: { x: 800, y: 80 }, firework_3: { x: 1200, y: 120 },
+            fish_market: { x: 700, y: 660 },
+            shopping_arcade: { x: 400, y: 680 },
+            harbor: { x: 1100, y: 670 },
+            kasai_bridge: { x: 400, y: 260 },
+            kasai_bridge_start: { x: 450, y: 300 }, kasai_bridge_end: { x: 350, y: 250 },
+            ropeway_label: { x: 850, y: 300 },
+            marine_city: { x: 1200, y: 850 },
+        };
+        // fixed-positions.json があれば座標を上書き
+        fetch('fixed-positions.json').then(r => r.json()).then(data => {
+            Object.keys(data).forEach(id => {
+                if (fixedPos[id]) { fixedPos[id].x = data[id].x; fixedPos[id].y = data[id].y; }
+            });
+            console.log('📍 固定座標読み込み完了');
+        }).catch(() => { /* JSONがなければデフォルト値を使用 */ });
+
         // 1票=1オブジェクト出現アニメーション
         let newObjectAnim = null; // { charType, startTime }
 
@@ -1627,11 +1653,11 @@ h<!DOCTYPE html>
 
                 // 5票以上で灯台 (near 三番瀬 area)
                 if (vV >= 5) {
-                    drawLighthouse(ctx, 1150, 500, now);
+                    drawLighthouse(ctx, fixedPos.lighthouse.x, fixedPos.lighthouse.y, now);
                 }
                 // 10票以上でマリーナ (near 総合公園 coast)
                 if (vV >= 10) {
-                    drawMarina(ctx, 1150, 650, now);
+                    drawMarina(ctx, fixedPos.marina.x, fixedPos.marina.y, now);
                 }
             }
 
@@ -1653,7 +1679,7 @@ h<!DOCTYPE html>
 
                 // 5票以上でクジラの噴水 (in Tokyo Bay)
                 if (vU >= 5) {
-                    drawWhale(ctx, 1000, 900, now);
+                    drawWhale(ctx, fixedPos.whale.x, fixedPos.whale.y, now);
                 }
                 // 8票以上でサンゴ礁
                 if (vU >= 8) {
@@ -1723,15 +1749,15 @@ h<!DOCTYPE html>
 
                 // 3票以上で大きな魚市場
                 if (vR >= 3) {
-                    drawFishMarketBuilding(ctx, 700, 660);
+                    drawFishMarketBuilding(ctx, fixedPos.fish_market.x, fixedPos.fish_market.y);
                 }
                 // 6票以上で商店街アーケード
                 if (vR >= 6) {
-                    drawShoppingArcade(ctx, 400, 680, now);
+                    drawShoppingArcade(ctx, fixedPos.shopping_arcade.x, fixedPos.shopping_arcade.y, now);
                 }
                 // 10票以上で港の大型施設
                 if (vR >= 10) {
-                    drawHarborFacility(ctx, 1100, 670);
+                    drawHarborFacility(ctx, fixedPos.harbor.x, fixedPos.harbor.y);
                 }
 
                 // 海面の跳ねる魚
@@ -2239,13 +2265,13 @@ h<!DOCTYPE html>
         // ===== サンゴ礁 =====
         function drawCoralReef(ctx, now) {
             const coralData = [
-                { x: 200, y: MAP_H - 30, color: '#ff6b6b', h: 20 },
-                { x: 350, y: MAP_H - 25, color: '#ff69b4', h: 18 },
-                { x: 550, y: MAP_H - 35, color: '#ffa500', h: 22 },
-                { x: 750, y: MAP_H - 28, color: '#da70d6', h: 16 },
-                { x: 1000, y: MAP_H - 32, color: '#ff6347', h: 20 },
-                { x: 1200, y: MAP_H - 26, color: '#e040fb', h: 18 },
-                { x: 1350, y: MAP_H - 30, color: '#ff4500', h: 15 },
+                { x: fixedPos.coral_1.x, y: fixedPos.coral_1.y, color: '#ff6b6b', h: 20 },
+                { x: fixedPos.coral_2.x, y: fixedPos.coral_2.y, color: '#ff69b4', h: 18 },
+                { x: fixedPos.coral_3.x, y: fixedPos.coral_3.y, color: '#ffa500', h: 22 },
+                { x: fixedPos.coral_4.x, y: fixedPos.coral_4.y, color: '#da70d6', h: 16 },
+                { x: fixedPos.coral_5.x, y: fixedPos.coral_5.y, color: '#ff6347', h: 20 },
+                { x: fixedPos.coral_6.x, y: fixedPos.coral_6.y, color: '#e040fb', h: 18 },
+                { x: fixedPos.coral_7.x, y: fixedPos.coral_7.y, color: '#ff4500', h: 15 },
             ];
             coralData.forEach(function(c, i) {
                 // サンゴの枝
@@ -2361,9 +2387,9 @@ h<!DOCTYPE html>
         // ===== 花火 =====
         function drawFireworks(ctx, now) {
             let fwData = [
-                { x: 400, y: 100, period: 4000, offset: 0 },
-                { x: 800, y: 80, period: 5000, offset: 1500 },
-                { x: 1200, y: 120, period: 4500, offset: 3000 },
+                { x: fixedPos.firework_1.x, y: fixedPos.firework_1.y, period: 4000, offset: 0 },
+                { x: fixedPos.firework_2.x, y: fixedPos.firework_2.y, period: 5000, offset: 1500 },
+                { x: fixedPos.firework_3.x, y: fixedPos.firework_3.y, period: 4500, offset: 3000 },
             ];
             fwData.forEach(function(fw) {
                 let phase = ((now + fw.offset) % fw.period) / fw.period;
@@ -3082,14 +3108,14 @@ h<!DOCTYPE html>
                 ctx.lineWidth = 4;
                 ctx.setLineDash([10, 5]);
                 ctx.beginPath();
-                ctx.moveTo(450, 300);
-                ctx.lineTo(350, 250);
+                ctx.moveTo(fixedPos.kasai_bridge_start.x, fixedPos.kasai_bridge_start.y);
+                ctx.lineTo(fixedPos.kasai_bridge_end.x, fixedPos.kasai_bridge_end.y);
                 ctx.stroke();
                 ctx.setLineDash([]);
                 ctx.font = 'bold 12px sans-serif';
                 ctx.fillStyle = '#E65100';
                 ctx.textAlign = 'center';
-                ctx.fillText('葛西大橋', 400, 260);
+                ctx.fillText('葛西大橋', fixedPos.kasai_bridge.x, fixedPos.kasai_bridge.y);
             }
             if (currentYear >= 2069) {
                 // Ropeway
@@ -3104,13 +3130,13 @@ h<!DOCTYPE html>
                 ctx.fillStyle = '#9C27B0';
                 ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('ロープウェイ', 850, 300);
+                ctx.fillText('ロープウェイ', fixedPos.ropeway_label.x, fixedPos.ropeway_label.y);
             }
             if (currentYear >= 2089) {
                 // Marine city
                 ctx.fillStyle = 'rgba(0, 188, 212, 0.3)';
                 ctx.beginPath();
-                ctx.arc(1200, 850, 80, 0, Math.PI * 2);
+                ctx.arc(fixedPos.marine_city.x, fixedPos.marine_city.y, 80, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.strokeStyle = '#00BCD4';
                 ctx.lineWidth = 2;
@@ -3118,7 +3144,7 @@ h<!DOCTYPE html>
                 ctx.fillStyle = '#00BCD4';
                 ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('海上都市', 1200, 855);
+                ctx.fillText('海上都市', fixedPos.marine_city.x, fixedPos.marine_city.y + 5);
             }
 
             // Draw voting station buildings on the map
