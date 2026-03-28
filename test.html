@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>めいすいくん総選挙 - テスト</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a2e; color: #eee; }
+        .pass { color: #4caf50; }
+        .fail { color: #f44336; font-weight: bold; }
+        .section { margin: 16px 0 8px; font-size: 18px; color: #ffd700; }
+        #results { white-space: pre-wrap; line-height: 1.8; }
+        #summary { margin-top: 20px; padding: 16px; border-radius: 12px; font-size: 20px; }
+    </style>
+</head>
+<body>
+    <h1>めいすいくん総選挙 テスト</h1>
+    <div id="results"></div>
+    <div id="summary"></div>
+
+    <!-- テスト対象のスクリプト（Firebase不要な純粋関数のみ） -->
+    <script>
+        // Firebase/DOMに依存するグローバル変数のスタブ
+        let totalVotes = 0;
+        let cycleStartVotes = 0;
+        let worldLineOffset = 0;
+        let votes = {};
+        let decorationOffset = {};
+    </script>
+    <script src="js/config.js"></script>
+    <script src="js/game-logic.js"></script>
+    <script>
+        let passed = 0;
+        let failed = 0;
+        const results = document.getElementById('results');
+
+        function section(name) {
+            results.innerHTML += `<div class="section">=== ${name} ===</div>`;
+        }
+
+        function assert(condition, msg) {
+            if (condition) {
+                passed++;
+                results.innerHTML += `<span class="pass">  PASS</span> ${msg}\n`;
+            } else {
+                failed++;
+                results.innerHTML += `<span class="fail">  FAIL</span> ${msg}\n`;
+            }
+        }
+
+        // ========== CHAR_TYPES テスト ==========
+        section('CHAR_TYPES');
+        assert(Array.isArray(CHAR_TYPES), 'CHAR_TYPESは配列');
+        assert(CHAR_TYPES.length === 6, '6キャラ存在する');
+        assert(CHAR_TYPES.includes('meisui'), 'meisuiが含まれる');
+        assert(CHAR_TYPES.includes('ryoushi'), 'ryoushiが含まれる');
+
+        // ========== charMetadata テスト ==========
+        section('charMetadata');
+        CHAR_TYPES.forEach(t => {
+            const meta = charMetadata[t];
+            assert(meta !== undefined, `${t}: メタデータが存在する`);
+            assert(typeof meta.name === 'string' && meta.name.length > 0, `${t}: nameが文字列`);
+            assert(typeof meta.color === 'string' && meta.color.startsWith('#'), `${t}: colorが#始まり`);
+            assert(typeof meta.policy === 'string', `${t}: policyが文字列`);
+            assert(typeof meta.baseSize === 'number' && meta.baseSize > 0, `${t}: baseSizeが正の数`);
+            assert(typeof meta.particleColor === 'string', `${t}: particleColorが文字列`);
+        });
+
+        // ========== charEffects テスト ==========
+        section('charEffects');
+        CHAR_TYPES.forEach(t => {
+            const effect = charEffects[t];
+            assert(effect !== undefined, `${t}: エフェクトが存在する`);
+            assert(effect.levels.length === effect.thresholds.length, `${t}: levels数とthresholds数が一致`);
+            assert(effect.thresholds[0] === 0, `${t}: 最初のthresholdは0`);
+        });
+
+        // ========== getCurrentYear テスト ==========
+        section('getCurrentYear');
+        totalVotes = 0; cycleStartVotes = 0;
+        assert(getCurrentYear() === 1889, '0票 → 1889年');
+
+        totalVotes = 5; cycleStartVotes = 0;
+        assert(getCurrentYear() === 1939, '5票 → 1939年');
+
+        totalVotes = 21; cycleStartVotes = 0;
+        assert(getCurrentYear() === 2099, '21票 → 2099年');
+
+        totalVotes = 22; cycleStartVotes = 0;
+        assert(getCurrentYear() === 2100, '22票 → 2100年(エンディング)');
+
+        totalVotes = 100; cycleStartVotes = 0;
+        assert(getCurrentYear() === 2100, '100票 → 2100年(上限)');
+
+        // ========== 世界線テスト ==========
+        section('getWorldLine / getEffectiveVotes');
+        worldLineOffset = 0;
+        assert(getWorldLine() === 1, 'offset 0 → 第1世界線');
+
+        worldLineOffset = 2;
+        assert(getWorldLine() === 3, 'offset 2 → 第3世界線');
+
+        totalVotes = 30; cycleStartVotes = 22;
+        assert(getEffectiveVotes() === 8, '30-22=8 有効票');
+        assert(getCurrentYear() === 1969, '有効8票 → 1969年');
+
+        // ========== isEndingTrigger テスト ==========
+        section('isEndingTrigger');
+        totalVotes = 21; cycleStartVotes = 0;
+        assert(!isEndingTrigger(), '21票 → エンディングではない');
+
+        totalVotes = 22; cycleStartVotes = 0;
+        assert(isEndingTrigger(), '22票 → エンディング発動');
+
+        // ========== getCurrentLevel テスト ==========
+        section('getCurrentLevel');
+        totalVotes = 0; cycleStartVotes = 0;
+        assert(getCurrentLevel().title === 'はらっぱ', '0票 → はらっぱ');
+
+        totalVotes = 10; cycleStartVotes = 0;
+        assert(getCurrentLevel().title === 'にぎやかなまち', '10票 → にぎやかなまち');
+
+        totalVotes = 22; cycleStartVotes = 0;
+        assert(getCurrentLevel().title === 'ゆめのまち', '22票 → ゆめのまち');
+
+        // ========== getOverallRank テスト ==========
+        section('getOverallRank');
+        totalVotes = 0; cycleStartVotes = 0;
+        assert(getOverallRank().current.rank === 'F', '0票 → Fランク');
+
+        totalVotes = 22; cycleStartVotes = 0;
+        assert(getOverallRank().current.rank === 'S', '22票 → Sランク');
+
+        // ========== getAreaLevel テスト ==========
+        section('getAreaLevel');
+        votes = { meisui: 0, tsutsuji: 3, bekabune: 10 };
+        assert(getAreaLevel('meisui') === 0, '0票 → レベル0');
+        assert(getAreaLevel('tsutsuji') === 2, '3票 → レベル2');
+        assert(getAreaLevel('bekabune') === 4, '10票 → レベル4');
+
+        // ========== historicalEvents テスト ==========
+        section('historicalEvents');
+        assert(historicalEvents[1889] !== undefined, '1889年イベントが存在');
+        assert(historicalEvents[1959].special === 'blackWater', '1959年は黒水事件');
+        assert(historicalEvents[2099] !== undefined, '2099年イベントが存在');
+        assert(Object.keys(historicalEvents).length === 22, '22個の歴史イベント');
+
+        // ========== 結果表示 ==========
+        const summary = document.getElementById('summary');
+        const total = passed + failed;
+        if (failed === 0) {
+            summary.style.background = '#1b5e20';
+            summary.innerHTML = `ALL PASS: ${passed}/${total} テスト成功`;
+        } else {
+            summary.style.background = '#b71c1c';
+            summary.innerHTML = `${failed} FAILED: ${passed}/${total} テスト成功`;
+        }
+    </script>
+</body>
+</html>

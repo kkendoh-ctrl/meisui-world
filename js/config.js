@@ -400,13 +400,46 @@ const START_YEAR = 1889;
 const END_YEAR = 2100;
 const YEARS_PER_VOTE = 10;
 
+// キャラクタータイプ一覧（全システム共通）
+const CHAR_TYPES = ['meisui', 'meisui_chan', 'tsutsuji', 'bekabune', 'asari', 'ryoushi'];
+
 const charMetadata = {
-    meisui: { name: 'イチョウめいすいくん', color: '#ffd700' },
-    meisui_chan: { name: 'ビーナスめいちゃん', color: '#ff6b6b' },
-    tsutsuji: { name: 'ツツジめいちゃん', color: '#e040fb' },
-    bekabune: { name: '浦安の海めいすいくん', color: '#42a5f5' },
-    asari: { name: '屋形船めいすいくん', color: '#ff8a65' },
-    ryoushi: { name: '漁師めいすいくん', color: '#66bb6a' }
+    meisui: {
+        name: 'イチョウめいすいくん', color: '#ffd700',
+        policy: '環境・緑化',
+        baseSize: 160,
+        particleColor: '#FFD700',
+    },
+    meisui_chan: {
+        name: 'ビーナスめいちゃん', color: '#ff6b6b',
+        policy: '観光・まちづくり',
+        baseSize: 160,
+        particleColor: '#87CEEB',
+    },
+    tsutsuji: {
+        name: 'ツツジめいちゃん', color: '#e040fb',
+        policy: '子育て・教育',
+        baseSize: 168,
+        particleColor: '#FF69B4',
+    },
+    bekabune: {
+        name: '浦安の海めいすいくん', color: '#42a5f5',
+        policy: '環境保全・三番瀬',
+        baseSize: 160,
+        particleColor: '#00CED1',
+    },
+    asari: {
+        name: '屋形船めいすいくん', color: '#ff8a65',
+        policy: '文化・伝統継承',
+        baseSize: 160,
+        particleColor: '#FF6347',
+    },
+    ryoushi: {
+        name: '漁師めいすいくん', color: '#66bb6a',
+        policy: '産業振興・商業',
+        baseSize: 210,
+        particleColor: '#90EE90',
+    }
 };
 
 // 投票効果フィードバック用データ

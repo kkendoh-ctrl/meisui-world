@@ -1015,3 +1015,127 @@
             0% { transform: scale(1) translateY(0); opacity: 1; }
             100% { transform: scale(0) translateY(-80px) rotate(360deg); opacity: 0; }
         }
+
+        /* =============================================
+           PopupManager 統一デザインシステム
+           ============================================= */
+
+        /* 共通ベース */
+        .popup {
+            position: fixed;
+            font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+            pointer-events: auto;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        /* 入場アニメーション */
+        .popup-enter {
+            animation: popupEnter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .popup-exit {
+            animation: popupExit 0.25s ease-in forwards;
+        }
+        @keyframes popupEnter {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+            to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes popupExit {
+            from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            to   { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+        }
+
+        /* Toast層: 上部中央 */
+        .popup-toast {
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: linear-gradient(135deg, rgba(0,0,0,0.88), rgba(30,30,30,0.92));
+            color: #fff;
+            padding: 20px 32px;
+            text-align: center;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            backdrop-filter: blur(12px);
+        }
+        .popup-toast.popup-enter {
+            animation: toastEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .popup-toast.popup-exit {
+            animation: toastExit 0.25s ease-in forwards;
+        }
+        @keyframes toastEnter {
+            from { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.9); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+        }
+        @keyframes toastExit {
+            from { opacity: 1; transform: translateX(-50%) translateY(0); }
+            to   { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+
+        /* Card層: 画面中央 */
+        .popup-card {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 500;
+            background: linear-gradient(135deg, #fffdf5, #fff8e8);
+            color: #333;
+            padding: 28px 32px;
+            text-align: center;
+            border: 3px solid #ffd700;
+        }
+
+        /* Modal層: 画面中央+暗転 */
+        .popup-modal {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 300;
+            background: linear-gradient(135deg, #fffdf0, #fffbf0);
+            color: #333;
+            padding: 30px;
+            border-radius: 20px;
+        }
+
+        /* 暗転オーバーレイ */
+        .popup-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 299;
+            animation: overlayIn 0.3s ease forwards;
+        }
+        .popup-overlay-exit {
+            animation: overlayOut 0.25s ease forwards;
+        }
+        @keyframes overlayIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        @keyframes overlayOut {
+            from { opacity: 1; }
+            to   { opacity: 0; }
+        }
+
+        /* Card ダークバリアント（黒水イベント等） */
+        .popup-card-dark {
+            background: linear-gradient(135deg, rgba(20,15,10,0.92), rgba(40,30,20,0.95));
+            color: #fff;
+            border-color: #555;
+        }
+
+        /* タップで次へヒント */
+        .popup-tap-hint {
+            margin-top: 12px;
+            font-size: 12px;
+            color: rgba(150, 150, 150, 0.7);
+            text-align: center;
+            animation: hintPulse 2s ease-in-out infinite;
+        }
+        @keyframes hintPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }

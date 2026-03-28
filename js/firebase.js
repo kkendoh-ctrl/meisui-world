@@ -13,26 +13,33 @@ firebase.initializeApp({
 const firebaseDb = firebase.database();
 const votesRef = firebaseDb.ref('votes');
 
-// 接続状態の監視
+// 接続状態の監視（再接続時にデータを再同期）
 firebaseDb.ref('.info/connected').on('value', (snap) => {
     const indicator = document.getElementById('firebaseStatus');
-    if (indicator) {
-        if (snap.val()) {
-            indicator.style.display = 'none';
-        } else {
-            indicator.style.display = 'block';
-            indicator.style.background = '#f44336';
-            indicator.style.color = 'white';
-            indicator.textContent = '⚠ オフライン - 投票が同期されません';
+    if (!indicator) return;
+
+    if (snap.val()) {
+        // オンライン復帰 → 最新データを取得して再同期
+        indicator.style.display = 'none';
+        if (typeof handleVoteSnapshot === 'function') {
+            votesRef.once('value').then(s => handleVoteSnapshot(s)).catch(err => {
+                console.error('再同期失敗:', err);
+            });
         }
+    } else {
+        // オフライン → 警告表示
+        indicator.style.display = 'block';
+        indicator.style.background = '#f44336';
+        indicator.style.color = 'white';
+        indicator.textContent = '⚠ オフライン - 再接続を待っています...';
     }
 });
 
-// グローバル変数初期化
-var votes = { meisui: 0, meisui_chan: 0, tsutsuji: 0, bekabune: 0, asari: 0, ryoushi: 0 };
-var totalVotes = 0;
-var worldLineOffset = 0;
-var cycleStartVotes = 0;
-var decorationOffset = { meisui: 0, tsutsuji: 0, meisui_chan: 0, bekabune: 0, asari: 0, ryoushi: 0 };
-var endingActive = false;
-var isInitialLoad = true;
+// グローバル状態変数（CHAR_TYPESから動的に初期化）
+let votes = Object.fromEntries(CHAR_TYPES.map(t => [t, 0]));
+let totalVotes = 0;
+let worldLineOffset = 0;
+let cycleStartVotes = 0;
+let decorationOffset = Object.fromEntries(CHAR_TYPES.map(t => [t, 0]));
+let endingActive = false;
+let isInitialLoad = true;

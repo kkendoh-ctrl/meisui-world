@@ -1,0 +1,184 @@
+// めいすいくん総選挙 - オーディオシステム
+// 効果音（Web Audio API）+ BGM（年代別自動切替）
+
+let audioContext = null;
+let soundEnabled = true;
+
+function initAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+function playSound(soundType) {
+    if (!soundEnabled) return;
+
+    initAudioContext();
+    if (!audioContext) return;
+    const now = audioContext.currentTime;
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+
+    switch(soundType) {
+        case 'vote':
+            // 明るい上昇チャイム (C-E-G)
+            osc.frequency.setValueAtTime(262, now);
+            osc.frequency.setValueAtTime(330, now + 0.1);
+            osc.frequency.setValueAtTime(392, now + 0.2);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+            break;
+        case 'correct':
+            // 正解チャイム
+            osc.frequency.setValueAtTime(523, now);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+            break;
+        case 'wrong':
+            // 不正解ブザー
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.setValueAtTime(150, now + 0.1);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+            break;
+        case 'unlock':
+            // 建物アンロックファンファーレ
+            osc.frequency.setValueAtTime(330, now);
+            osc.frequency.setValueAtTime(440, now + 0.1);
+            osc.frequency.setValueAtTime(523, now + 0.2);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+            osc.start(now);
+            osc.stop(now + 0.4);
+            break;
+        case 'levelup':
+            // レベルアップスケール
+            const notes = [262, 294, 330, 349, 392, 440, 494, 523];
+            for (let i = 0; i < notes.length; i++) {
+                osc.frequency.setValueAtTime(notes[i], now + i * 0.08);
+            }
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+            osc.start(now);
+            osc.stop(now + 0.7);
+            break;
+        case 'event':
+            // イベント通知ベル
+            osc.frequency.setValueAtTime(587, now);
+            osc.frequency.setValueAtTime(659, now + 0.05);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+            break;
+    }
+}
+
+
+// ============================================
+// BGM System — 年代別BGM自動切替
+// ============================================
+const bgmTracks = {
+    village: new Audio('sounds/bgm_village.mp3'),  // 1889-1959
+    growth: new Audio('sounds/bgm_growth.mp3'),    // 1969-1989
+    modern: new Audio('sounds/bgm_modern.mp3'),    // 1999-2069
+    future: new Audio('sounds/bgm_future.mp3'),    // 2079-2100
+};
+// 全トラックをループ設定・音量調整
+Object.values(bgmTracks).forEach(audio => {
+    audio.loop = true;
+    audio.volume = 0.3;
+});
+
+let currentBgmKey = null;
+let bgmEnabled = true;
+
+function getBgmKeyForYear(year) {
+    if (year <= 1959) return 'village';
+    if (year <= 1989) return 'growth';
+    if (year <= 2069) return 'modern';
+    return 'future';
+}
+
+function updateBgm() {
+    if (!bgmEnabled || !soundEnabled) {
+        // BGMまたはサウンドが無効 → 全停止
+        Object.values(bgmTracks).forEach(a => { a.pause(); });
+        currentBgmKey = null;
+        return;
+    }
+    // getCurrentYearはgame-logic.jsで定義（読み込み順で保証）
+    const year = (typeof getCurrentYear === 'function') ? getCurrentYear() : START_YEAR;
+    const newKey = getBgmKeyForYear(year);
+    if (newKey === currentBgmKey) return;
+
+    // 現在の曲をフェードアウト
+    if (currentBgmKey && bgmTracks[currentBgmKey]) {
+        const oldTrack = bgmTracks[currentBgmKey];
+        const fadeOut = setInterval(() => {
+            if (oldTrack.volume > 0.05) {
+                oldTrack.volume = Math.max(0, oldTrack.volume - 0.05);
+            } else {
+                oldTrack.pause();
+                oldTrack.volume = 0.3;
+                oldTrack.currentTime = 0;
+                clearInterval(fadeOut);
+            }
+        }, 100);
+    }
+
+    // 新しい曲をフェードイン
+    currentBgmKey = newKey;
+    const newTrack = bgmTracks[newKey];
+    newTrack.volume = 0;
+    newTrack.play().then(() => {
+        const fadeIn = setInterval(() => {
+            if (newTrack.volume < 0.25) {
+                newTrack.volume = Math.min(0.3, newTrack.volume + 0.05);
+            } else {
+                clearInterval(fadeIn);
+            }
+        }, 100);
+    }).catch(() => {
+        // 自動再生ブロック → ユーザー操作時に再試行
+        bgmPendingPlay = true;
+    });
+}
+
+// 自動再生ブロック対策: ユーザー操作で再試行
+let bgmPendingPlay = false;
+document.addEventListener('click', function bgmRetry() {
+    if (bgmPendingPlay && currentBgmKey) {
+        bgmPendingPlay = false;
+        const track = bgmTracks[currentBgmKey];
+        track.volume = 0;
+        track.play().then(() => {
+            const fadeIn = setInterval(() => {
+                if (track.volume < 0.25) {
+                    track.volume = Math.min(0.3, track.volume + 0.05);
+                } else {
+                    clearInterval(fadeIn);
+                }
+            }, 100);
+        }).catch(() => {});
+    }
+});
+
+// サウンドトグル（BGMも連動）
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('soundToggleBtn');
+    if (btn) {
+        btn.textContent = soundEnabled ? '🔊' : '🔇';
+    }
+    updateBgm();
+}

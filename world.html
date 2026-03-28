@@ -13,6 +13,12 @@ h<!DOCTYPE html>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="js/firebase.js"></script>
+    <script src="js/popup-manager.js"></script>
+    <script src="js/game-logic.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/quiz-system.js"></script>
+    <script src="js/building-system.js"></script>
+    <script src="js/event-system.js"></script>
 </head>
 <body>
     <!-- Firebase connection indicator -->
@@ -85,7 +91,7 @@ h<!DOCTYPE html>
             <div style="display:flex;gap:6px;margin-bottom:6px;">
                 <button onclick="openRankPopup()" style="flex:1;font-size:13px;color:#fff;background:linear-gradient(135deg,#f7971e,#ffd200);border:none;padding:8px 0;border-radius:8px;cursor:pointer;font-weight:bold;">🏆 街ランク</button>
                 <button onclick="showTutorial()" style="flex:1;font-size:13px;color:#fff;background:linear-gradient(135deg,#42a5f5,#7e57c2);border:none;padding:8px 0;border-radius:8px;cursor:pointer;font-weight:bold;">📖 あそびかた</button>
-                <button onclick="if(confirm('⚠️ 全データをリセットしますか？（投票・世界線・すべて初期化）')){votesRef.set({meisui:0,meisui_chan:0,tsutsuji:0,bekabune:0,asari:0,ryoushi:0});firebaseDb.ref('worldLineOffset').set(0);firebaseDb.ref('stats/cycleStartVotes').set(0);firebaseDb.ref('stats/decorationOffset').set({meisui:0,tsutsuji:0,meisui_chan:0,bekabune:0,asari:0,ryoushi:0});endingActive=false;builtBuildings=[];localStorage.setItem('meisui_builtBuildings','[]');}" style="flex:1;font-size:11px;color:#fff;background:#78909c;border:none;padding:5px 0;border-radius:6px;cursor:pointer;font-weight:bold;">🔄 リセット</button>
+                <button onclick="resetAllData()" style="flex:1;font-size:11px;color:#fff;background:#78909c;border:none;padding:5px 0;border-radius:6px;cursor:pointer;font-weight:bold;">🔄 リセット</button>
             </div>
             <div style="display:flex;gap:3px;">
                 <button onclick="debugAddVotes(1)" style="flex:1;font-size:10px;color:#fff;background:#e53935;border:none;padding:4px 0;border-radius:5px;cursor:pointer;font-weight:bold;">+10年</button>
@@ -108,188 +114,7 @@ h<!DOCTYPE html>
         // ============================================
         // Sound Manager (Web Audio API)
         // ============================================
-        let audioContext = null;
-        let soundEnabled = true;
-
-        function initAudioContext() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        }
-
-        function playSound(soundType) {
-            if (!soundEnabled) return;
-
-            initAudioContext();
-            if (!audioContext) return;
-            const now = audioContext.currentTime;
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-
-            switch(soundType) {
-                case 'vote':
-                    // Cheerful ascending chime (C-E-G)
-                    osc.frequency.setValueAtTime(262, now); // C
-                    osc.frequency.setValueAtTime(330, now + 0.1); // E
-                    osc.frequency.setValueAtTime(392, now + 0.2); // G
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                    osc.start(now);
-                    osc.stop(now + 0.3);
-                    break;
-                case 'correct':
-                    // Happy ding
-                    osc.frequency.setValueAtTime(523, now); // C5
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                    osc.start(now);
-                    osc.stop(now + 0.3);
-                    break;
-                case 'wrong':
-                    // Gentle buzzer
-                    osc.frequency.setValueAtTime(200, now);
-                    osc.frequency.setValueAtTime(150, now + 0.1);
-                    gain.gain.setValueAtTime(0.15, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                    osc.start(now);
-                    osc.stop(now + 0.2);
-                    break;
-                case 'unlock':
-                    // Triumphant fanfare
-                    osc.frequency.setValueAtTime(330, now); // E
-                    osc.frequency.setValueAtTime(440, now + 0.1); // A
-                    osc.frequency.setValueAtTime(523, now + 0.2); // C5
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-                    osc.start(now);
-                    osc.stop(now + 0.4);
-                    break;
-                case 'levelup':
-                    // Grand ascending scale
-                    const notes = [262, 294, 330, 349, 392, 440, 494, 523];
-                    for (let i = 0; i < notes.length; i++) {
-                        osc.frequency.setValueAtTime(notes[i], now + i * 0.08);
-                    }
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
-                    osc.start(now);
-                    osc.stop(now + 0.7);
-                    break;
-                case 'event':
-                    // Notification bell
-                    osc.frequency.setValueAtTime(587, now); // D5
-                    osc.frequency.setValueAtTime(659, now + 0.05); // E5
-                    gain.gain.setValueAtTime(0.25, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                    osc.start(now);
-                    osc.stop(now + 0.3);
-                    break;
-            }
-        }
-
-
-        // ============================================
-        // BGM System — 年代別BGM自動切替
-        // ============================================
-        const bgmTracks = {
-            village: new Audio('sounds/bgm_village.mp3'),  // 1889-1959
-            growth: new Audio('sounds/bgm_growth.mp3'),    // 1969-1989
-            modern: new Audio('sounds/bgm_modern.mp3'),    // 1999-2069
-            future: new Audio('sounds/bgm_future.mp3'),    // 2079-2100
-        };
-        // 全トラックをループ設定・音量調整
-        Object.values(bgmTracks).forEach(audio => {
-            audio.loop = true;
-            audio.volume = 0.3;
-        });
-
-        let currentBgmKey = null;
-        let bgmEnabled = true;
-
-        function getBgmKeyForYear(year) {
-            if (year <= 1959) return 'village';
-            if (year <= 1989) return 'growth';
-            if (year <= 2069) return 'modern';
-            return 'future';
-        }
-
-        function updateBgm() {
-            if (!bgmEnabled || !soundEnabled) {
-                // BGMまたはサウンドが無効 → 全停止
-                Object.values(bgmTracks).forEach(a => { a.pause(); });
-                currentBgmKey = null;
-                return;
-            }
-            const year = getCurrentYear();
-            const newKey = getBgmKeyForYear(year);
-            if (newKey === currentBgmKey) return; // 同じ曲なら何もしない
-
-            // 現在の曲をフェードアウト
-            if (currentBgmKey && bgmTracks[currentBgmKey]) {
-                const oldTrack = bgmTracks[currentBgmKey];
-                const fadeOut = setInterval(() => {
-                    if (oldTrack.volume > 0.05) {
-                        oldTrack.volume = Math.max(0, oldTrack.volume - 0.05);
-                    } else {
-                        oldTrack.pause();
-                        oldTrack.volume = 0.3;
-                        oldTrack.currentTime = 0;
-                        clearInterval(fadeOut);
-                    }
-                }, 100);
-            }
-
-            // 新しい曲をフェードイン
-            currentBgmKey = newKey;
-            const newTrack = bgmTracks[newKey];
-            newTrack.volume = 0;
-            newTrack.play().then(() => {
-                // 再生成功 → フェードイン
-                const fadeIn = setInterval(() => {
-                    if (newTrack.volume < 0.25) {
-                        newTrack.volume = Math.min(0.3, newTrack.volume + 0.05);
-                    } else {
-                        clearInterval(fadeIn);
-                    }
-                }, 100);
-            }).catch(() => {
-                // 自動再生ブロック → ユーザー操作時に再試行
-                bgmPendingPlay = true;
-            });
-        }
-
-        // 自動再生ブロック対策: ユーザー操作で再試行
-        let bgmPendingPlay = false;
-        document.addEventListener('click', function bgmRetry() {
-            if (bgmPendingPlay && currentBgmKey) {
-                bgmPendingPlay = false;
-                const track = bgmTracks[currentBgmKey];
-                track.volume = 0;
-                track.play().then(() => {
-                    const fadeIn = setInterval(() => {
-                        if (track.volume < 0.25) {
-                            track.volume = Math.min(0.3, track.volume + 0.05);
-                        } else {
-                            clearInterval(fadeIn);
-                        }
-                    }, 100);
-                }).catch(() => {});
-            }
-        });
-
-        // サウンドトグルにBGMも連動
-        const origToggleSound = toggleSound;
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            const btn = document.getElementById('soundToggleBtn');
-            if (btn) {
-                btn.textContent = soundEnabled ? '🔊' : '🔇';
-            }
-            updateBgm();
-        }
+        // オーディオシステムは js/audio.js に分離済み
 
         // Character image data URLs
 
@@ -309,14 +134,9 @@ h<!DOCTYPE html>
         // Initialize voting grid
         function initVoteGrid() {
             const voteGridContainer = document.getElementById('voteGridContainer');
-            const voteData = [
-                { type: 'meisui', name: 'イチョウめいすいくん', img: charImages.meisui },
-                { type: 'meisui_chan', name: 'ビーナスめいちゃん', img: charImages.meisui_chan },
-                { type: 'tsutsuji', name: 'ツツジめいちゃん', img: charImages.tsutsuji },
-                { type: 'bekabune', name: '浦安の海めいすいくん', img: charImages.bekabune },
-                { type: 'asari', name: '屋形船めいすいくん', img: charImages.asari },
-                { type: 'ryoushi', name: '漁師めいすいくん', img: charImages.ryoushi },
-            ];
+            const voteData = CHAR_TYPES.map(t => ({
+                type: t, name: charMetadata[t].name, img: charImages[t]
+            }));
 
             let html = '';
             voteData.forEach(data => {
@@ -1576,12 +1396,11 @@ h<!DOCTYPE html>
                 ctx.restore();
             }
 
-            const vM = Math.max(0, (votes.meisui || 0) - (decorationOffset.meisui || 0));
-            const vT = Math.max(0, (votes.tsutsuji || 0) - (decorationOffset.tsutsuji || 0));
-            const vV = Math.max(0, (votes.meisui_chan || 0) - (decorationOffset.meisui_chan || 0));
-            const vU = Math.max(0, (votes.bekabune || 0) - (decorationOffset.bekabune || 0));
-            const vA = Math.max(0, (votes.asari || 0) - (decorationOffset.asari || 0));
-            const vR = Math.max(0, (votes.ryoushi || 0) - (decorationOffset.ryoushi || 0));
+            // キャラ別の有効投票数を一括計算
+            const cv = {};
+            CHAR_TYPES.forEach(t => { cv[t] = Math.max(0, (votes[t] || 0) - (decorationOffset[t] || 0)); });
+            const vM = cv.meisui, vT = cv.tsutsuji, vV = cv.meisui_chan;
+            const vU = cv.bekabune, vA = cv.asari, vR = cv.ryoushi;
 
             // ========== 1. めいすいくん → イチョウ並木・黄金の紅葉 ==========
             if (vM > 0) {
@@ -2345,7 +2164,7 @@ h<!DOCTYPE html>
             ctx.fillRect(16, -16, 2, 12);
 
             // 提灯（大きめ、光あり）
-            var lanternGlow = 0.6 + Math.sin(now * 0.005 + seed) * 0.2;
+            let lanternGlow = 0.6 + Math.sin(now * 0.005 + seed) * 0.2;
             ctx.fillStyle = 'rgba(255, 60, 0, ' + lanternGlow + ')';
             ctx.beginPath();
             ctx.ellipse(-14, -19, 4, 5, 0, 0, Math.PI * 2);
@@ -2378,7 +2197,7 @@ h<!DOCTYPE html>
             ctx.lineWidth = 1.5;
             for (let w = 0; w < 3; w++) {
                 ctx.beginPath();
-                var wakeX = x - dir * 30 - dir * w * 10;
+                let wakeX = x - dir * 30 - dir * w * 10;
                 ctx.moveTo(wakeX, y + 10 + bob);
                 ctx.quadraticCurveTo(wakeX - dir * 15, y + 8 + w * 3 + bob, wakeX - dir * 30, y + 12 + w * 5 + bob);
                 ctx.stroke();
@@ -2387,22 +2206,22 @@ h<!DOCTYPE html>
 
         // ===== 花火 =====
         function drawFireworks(ctx, now) {
-            var fwData = [
+            let fwData = [
                 { x: 400, y: 100, period: 4000, offset: 0 },
                 { x: 800, y: 80, period: 5000, offset: 1500 },
                 { x: 1200, y: 120, period: 4500, offset: 3000 },
             ];
             fwData.forEach(function(fw) {
-                var phase = ((now + fw.offset) % fw.period) / fw.period;
+                let phase = ((now + fw.offset) % fw.period) / fw.period;
                 if (phase < 0.6) {
-                    var expand = phase / 0.6;
-                    var alpha = 1 - expand * 0.8;
-                    var radius = expand * 60;
-                    var colors = ['#ff4444', '#ffd700', '#ff69b4', '#44ff44', '#44aaff', '#ff8c00'];
-                    for (var r = 0; r < 12; r++) {
-                        var angle = (r / 12) * Math.PI * 2;
-                        var sparkX = fw.x + Math.cos(angle) * radius;
-                        var sparkY = fw.y + Math.sin(angle) * radius;
+                    let expand = phase / 0.6;
+                    let alpha = 1 - expand * 0.8;
+                    let radius = expand * 60;
+                    let colors = ['#ff4444', '#ffd700', '#ff69b4', '#44ff44', '#44aaff', '#ff8c00'];
+                    for (let r = 0; r < 12; r++) {
+                        let angle = (r / 12) * Math.PI * 2;
+                        let sparkX = fw.x + Math.cos(angle) * radius;
+                        let sparkY = fw.y + Math.sin(angle) * radius;
                         ctx.fillStyle = colors[r % colors.length];
                         ctx.globalAlpha = alpha;
                         ctx.beginPath();
@@ -2424,7 +2243,7 @@ h<!DOCTYPE html>
 
         // ===== 商業要素 =====
         function drawCommerceElement(ctx, x, y, seed, index, now) {
-            var type = index % 5;
+            let type = index % 5;
             if (type === 0) {
                 // 魚の屋台
                 ctx.fillStyle = '#a0522d';
@@ -2435,12 +2254,12 @@ h<!DOCTYPE html>
                 ctx.stroke();
                 // のれん（赤白）
                 ctx.fillStyle = '#cc0000';
-                for (var n = 0; n < 4; n++) {
+                for (let n = 0; n < 4; n++) {
                     ctx.fillRect(x - 15 + n * 9, y - 6, 7, 8);
                 }
                 // 魚の陳列
-                var fishColors = ['#c0c0c0', '#87ceeb', '#ffa07a'];
-                for (var f = 0; f < 4; f++) {
+                let fishColors = ['#c0c0c0', '#87ceeb', '#ffa07a'];
+                for (let f = 0; f < 4; f++) {
                     ctx.fillStyle = fishColors[f % 3];
                     ctx.beginPath();
                     ctx.ellipse(x - 10 + f * 7, y + 6, 5, 2.5, 0, 0, Math.PI * 2);
@@ -2457,9 +2276,9 @@ h<!DOCTYPE html>
                 // アサリの模様
                 ctx.strokeStyle = '#b8996e';
                 ctx.lineWidth = 0.5;
-                for (var a = 0; a < 8; a++) {
-                    var ax = x - 8 + (a % 4) * 5;
-                    var ay = y + (a < 4 ? 0 : -4);
+                for (let a = 0; a < 8; a++) {
+                    let ax = x - 8 + (a % 4) * 5;
+                    let ay = y + (a < 4 ? 0 : -4);
                     ctx.beginPath();
                     ctx.arc(ax, ay, 3, 0, Math.PI, true);
                     ctx.stroke();
@@ -2490,7 +2309,7 @@ h<!DOCTYPE html>
                 ctx.stroke();
                 // 干物
                 ctx.fillStyle = '#daa520';
-                for (var h = 0; h < 4; h++) {
+                for (let h = 0; h < 4; h++) {
                     ctx.beginPath();
                     ctx.ellipse(x - 6 + h * 4, y - 10, 2, 5, 0, 0, Math.PI * 2);
                     ctx.fill();
@@ -2508,8 +2327,8 @@ h<!DOCTYPE html>
                 ctx.fillRect(x - 14, y - 4, 10, 7);
                 ctx.fillRect(x + 4, y - 4, 10, 7);
                 // 寿司
-                var sushiColors = ['#ff6b6b', '#ffa07a', '#ff4500', '#e8e800'];
-                for (var s = 0; s < 4; s++) {
+                let sushiColors = ['#ff6b6b', '#ffa07a', '#ff4500', '#e8e800'];
+                for (let s = 0; s < 4; s++) {
                     ctx.fillStyle = '#fff';
                     ctx.fillRect(x - 10 + s * 6, y + 6, 5, 3);
                     ctx.fillStyle = sushiColors[s];
@@ -2529,10 +2348,10 @@ h<!DOCTYPE html>
                 ctx.fillRect(x - 10, y + 2, 20, 4);
                 // 煙（アニメーション）
                 ctx.fillStyle = 'rgba(180, 180, 180, 0.25)';
-                for (var sm = 0; sm < 4; sm++) {
-                    var smokeY = y - 5 - ((now * 0.02 + sm * 15) % 40);
-                    var smokeX = x + Math.sin(now * 0.002 + sm) * 5;
-                    var smokeR = 4 + ((now * 0.02 + sm * 15) % 40) * 0.15;
+                for (let sm = 0; sm < 4; sm++) {
+                    let smokeY = y - 5 - ((now * 0.02 + sm * 15) % 40);
+                    let smokeX = x + Math.sin(now * 0.002 + sm) * 5;
+                    let smokeR = 4 + ((now * 0.02 + sm * 15) % 40) * 0.15;
                     ctx.beginPath();
                     ctx.arc(smokeX, smokeY, smokeR, 0, Math.PI * 2);
                     ctx.fill();
@@ -2579,7 +2398,7 @@ h<!DOCTYPE html>
 
         // ===== 商店街アーケード =====
         function drawShoppingArcade(ctx, x, y, now) {
-            var arcadeW = 180;
+            let arcadeW = 180;
             // 屋根
             ctx.fillStyle = 'rgba(200, 50, 50, 0.8)';
             ctx.beginPath();
@@ -2592,8 +2411,8 @@ h<!DOCTYPE html>
             // フレーム
             ctx.strokeStyle = '#8b4513';
             ctx.lineWidth = 2;
-            for (var p = 0; p < 6; p++) {
-                var px = x + 10 + p * 30;
+            for (let p = 0; p < 6; p++) {
+                let px = x + 10 + p * 30;
                 ctx.beginPath();
                 ctx.moveTo(px, y);
                 ctx.lineTo(px, y - 18 - Math.sin((p / 5) * Math.PI) * 12);
@@ -2607,9 +2426,9 @@ h<!DOCTYPE html>
             ctx.textAlign = 'center';
             ctx.fillText('浦安元町商店街', x + arcadeW / 2, y - 5);
             // 提灯
-            for (var l = 0; l < 5; l++) {
-                var lx = x + 20 + l * 35;
-                var swing = Math.sin(now * 0.002 + l) * 2;
+            for (let l = 0; l < 5; l++) {
+                let lx = x + 20 + l * 35;
+                let swing = Math.sin(now * 0.002 + l) * 2;
                 ctx.fillStyle = '#ff4500';
                 ctx.beginPath();
                 ctx.ellipse(lx, y - 24 + swing, 4, 5, 0, 0, Math.PI * 2);
@@ -2630,7 +2449,7 @@ h<!DOCTYPE html>
             ctx.fillStyle = '#4682b4';
             ctx.beginPath();
             ctx.moveTo(x - 42, y - 5);
-            for (var w = 0; w < 8; w++) {
+            for (let w = 0; w < 8; w++) {
                 ctx.quadraticCurveTo(x - 35 + w * 10, y - 18, x - 30 + w * 10, y - 5);
             }
             ctx.closePath();
@@ -2654,7 +2473,7 @@ h<!DOCTYPE html>
 
             // キャラサイズ（票数で変化しない固定サイズ）
             const voteBonus = votes[char.type] || 0;
-            const baseSize = (char.type === 'tsutsuji' ? 168 : char.type === 'ryoushi' ? 210 : 160) * 1.3;
+            const baseSize = (charMetadata[char.type]?.baseSize || 160) * 1.3;
             const size = baseSize;
             const aspect = img.naturalWidth / img.naturalHeight;
             const w = size * aspect;
@@ -2700,10 +2519,7 @@ h<!DOCTYPE html>
                 ctx.shadowBlur = glowIntensity;
 
                 // キラキラパーティクルを大量に降らせる
-                const particleColor = {
-                    meisui: '#FFD700', tsutsuji: '#FF69B4', meisui_chan: '#87CEEB',
-                    bekabune: '#00CED1', asari: '#FF6347', ryoushi: '#90EE90'
-                }[char.type] || '#FFD700';
+                const particleColor = charMetadata[char.type]?.particleColor || '#FFD700';
 
                 // 常にキラキラを生成（確率を高く）
                 if (Math.random() < 0.6) {
@@ -3044,6 +2860,7 @@ h<!DOCTYPE html>
         // Animation loop
         let lastTime = Date.now();
         function animate() {
+          try {
             const now = Date.now();
             const deltaTime = now - lastTime;
             lastTime = now;
@@ -3164,7 +2981,10 @@ h<!DOCTYPE html>
 
             // CHANGE 4: drawMinimap call removed
 
-            requestAnimationFrame(animate);
+          } catch (e) {
+            console.error('描画エラー:', e);
+          }
+          requestAnimationFrame(animate);
         }
 
         // Input handling
@@ -3193,7 +3013,7 @@ h<!DOCTYPE html>
                 const char = characters[i];
                 const dx = char.x - mapX;
                 const dy = char.y - mapY;
-                const charSize = ((char.type === 'tsutsuji' ? 168 : char.type === 'ryoushi' ? 210 : 160) * 1.3) / 2;
+                const charSize = ((charMetadata[char.type]?.baseSize || 160) * 1.3) / 2;
                 if (Math.abs(dx) < charSize && Math.abs(dy) < charSize) {
                     return char;
                 }
@@ -3278,9 +3098,22 @@ h<!DOCTYPE html>
         });
 
         // Debug: add multiple votes at once (for testing year progression)
+        // 全データリセット（CHAR_TYPESから動的に初期化）
+        function resetAllData() {
+            if (!confirm('⚠️ 全データをリセットしますか？（投票・世界線・すべて初期化）')) return;
+            const zeroVotes = Object.fromEntries(CHAR_TYPES.map(t => [t, 0]));
+            votesRef.set(zeroVotes);
+            firebaseDb.ref('worldLineOffset').set(0);
+            firebaseDb.ref('stats/cycleStartVotes').set(0);
+            firebaseDb.ref('stats/decorationOffset').set(zeroVotes);
+            endingActive = false;
+            builtBuildings = [];
+            localStorage.setItem('meisui_builtBuildings', '[]');
+        }
+
         function debugAddVotes(count) {
             if (!confirm('デバッグ: ' + count + '票を一括追加しますか？')) return;
-            const chars = ['meisui', 'tsutsuji', 'meisui_chan', 'bekabune', 'asari', 'ryoushi'];
+            const chars = CHAR_TYPES;
             // イベント発火を抑制してフリーズを防ぐ
             isInitialLoad = true;
             votesRef.transaction(current => {
@@ -3322,14 +3155,7 @@ h<!DOCTYPE html>
             const voteCount = votes[char.type] || 0;
             const cutinData = typeof cutinIdioms !== 'undefined' ? cutinIdioms[char.type] : null;
 
-            const policies = {
-                meisui: '環境・緑化',
-                tsutsuji: '子育て・教育',
-                meisui_chan: '観光・まちづくり',
-                bekabune: '環境保全・三番瀬',
-                asari: '文化・伝統継承',
-                ryoushi: '産業振興・商業'
-            };
+            const policies = Object.fromEntries(CHAR_TYPES.map(t => [t, charMetadata[t].policy]));
 
             const card = document.createElement('div');
             card.id = 'charProfileCard';
@@ -3398,34 +3224,7 @@ h<!DOCTYPE html>
 
         // votes, totalVotes はfirebase.jsで定義済み
 
-        // ========== YEAR SYSTEM (1889-2100, 1票=10年) ==========
-        // 22票で2100年(エンディング): 0票=1889, ..., 20票=2089, 21票=2099, 22票+=2100
-        // 世界線ボタン押下でcycleStartVotes=現在の票数に設定→effective=0→1889年に戻る
-        const VOTES_PER_CYCLE = 22; // 参考値（年計算にはcycleStartVotesを使用）
-
-        // cycleStartVotes: この世界線が始まった時点の累計票数（Firebase保存）
-        // 世界線ボタン押下時に現在のtotalVotesを保存する
-
-        function getEffectiveVotes() {
-            const eff = Math.max(0, totalVotes - cycleStartVotes);
-            return eff;
-        }
-
-        function getCurrentYear() {
-            const effective = getEffectiveVotes();
-            // 0票=1889, ..., 20票=2089, 21票=2099, 22票以上=2100
-            if (effective >= 22) return END_YEAR;
-            return START_YEAR + effective * YEARS_PER_VOTE; // 21*10+1889=2099
-        }
-
-        function getWorldLine() {
-            return (worldLineOffset || 0) + 1;
-        }
-
-        function isEndingTrigger() {
-            const effective = getEffectiveVotes();
-            return effective >= 22; // 22票以上で2100年=エンディング（>=で飛び越え対応）
-        }
+        // 年代・レベル・ランクシステムは js/game-logic.js に分離済み
 
         function updateYearDisplay() {
             const year = getCurrentYear();
@@ -3446,330 +3245,15 @@ h<!DOCTYPE html>
             console.log(`📅 Year=${year} WL=${worldLine} | totalVotes=${totalVotes} cycleStart=${cycleStartVotes} effective=${getEffectiveVotes()} wlOffset=${worldLineOffset}`);
         }
 
-        // Historical events triggered by year milestones
-        const historicalEvents = {
-            // ===== 実際の浦安の歴史 =====
-            1889: {text: '浦安村 誕生 — 堀江・猫実・当代島の3村が合併', emoji: '🏘️'},
-            1899: {text: 'べか舟漁 最盛期 — 海苔とあさりで浦安は活気づく', emoji: '⛵'},
-            1909: {text: '浦安町に昇格', emoji: '🏛️'},
-            1919: {text: '大正6年の大津波の記憶… 高潮で浦安が水没した', emoji: '🌊'},
-            1929: {text: '浦安橋の建設がはじまる — 東京への道がひらける', emoji: '🌉'},
-            1939: {text: '戦時中… 浦安の漁師たちも戦地へ', emoji: '⚔️'},
-            1949: {text: 'キティ台風 襲来！ 堤防14か所が決壊、町の7割が浸水…', emoji: '🌀'},
-            1959: {text: '黒い水事件 — 工場排水で海が汚染された…', emoji: '🖤', special: 'blackWater'},
-            1969: {text: '地下鉄東西線 開通！ 浦安が東京とつながった', emoji: '🚇'},
-            1979: {text: '埋め立てで浦安の面積が4倍に！ 舞浜・日の出・明海が誕生', emoji: '🏗️'},
-            1989: {text: 'JR京葉線 開通！ 新浦安駅・舞浜駅ができた', emoji: '🚃'},
-            1999: {text: '浦安市の人口が15万人を突破！ 住みたい街ランキング上位に', emoji: '🏙️'},
-            2009: {text: '東京ディズニーリゾート 来園者数3億人突破！', emoji: '🏰'},
-            2019: {text: '浦安三社祭 4年に一度の大祭！ まいだ！まいだ！', emoji: '🏮'},
-            // ===== 未来の浦安 =====
-            2029: {text: '三番瀬 自然再生プロジェクト 開始！', emoji: '🦅'},
-            2039: {text: '浦安スマートシティ計画 — 自動運転バスが走り出す', emoji: '🚌'},
-            2049: {text: '葛西に橋が架かった！ 東京湾岸エリアが一体化', emoji: '🌉'},
-            2059: {text: '浦安 海上ソーラー発電 稼働！ エネルギー自給率100%', emoji: '☀️'},
-            2069: {text: '浦安↔新浦安 ロープウェイ開通！', emoji: '🚡'},
-            2079: {text: '海底トンネルで千葉と神奈川が直結！', emoji: '🚇'},
-            2089: {text: '海上都市計画 始動！ 東京湾に浮かぶ街', emoji: '🏙️'},
-            2099: {text: '未来都市うらやす 完成間近！', emoji: '🌟'},
-        };
+        // historicalEventsは js/game-logic.js に分離済み
 
-        // ============================================
-        // 投票効果フィードバック表示
-        // ============================================
-        function showVoteEffect(charType) {
-            const effect = charEffects[charType];
-            const meta = charMetadata[charType];
-            if (!effect || !meta) { onEventDone(); return; }
-
-            // 現在のキャラ投票数（decorationOffset考慮）
-            const charVotes = Math.max(0, (votes[charType] || 0) - (decorationOffset[charType] || 0));
-
-            // 現在レベルと次レベルを算出
-            let currentLevel = 0;
-            for (let i = effect.thresholds.length - 1; i >= 0; i--) {
-                if (charVotes >= effect.thresholds[i]) { currentLevel = i; break; }
-            }
-            const currentLevelName = effect.levels[currentLevel];
-            const nextLevel = currentLevel < effect.levels.length - 1 ? currentLevel + 1 : null;
-            const nextLevelName = nextLevel ? effect.levels[nextLevel] : null;
-            const nextThreshold = nextLevel ? effect.thresholds[nextLevel] : null;
-
-            // 進捗バー
-            const prevThreshold = effect.thresholds[currentLevel];
-            const range = nextThreshold ? nextThreshold - prevThreshold : 1;
-            const progress = nextThreshold ? Math.min(1, (charVotes - prevThreshold) / range) : 1;
-            const barFilled = Math.round(progress * 10);
-            const barEmpty = 10 - barFilled;
-            const progressBar = '━'.repeat(barFilled) + '░'.repeat(barEmpty);
-
-            // 次レベルまでのメッセージ
-            const remaining = nextThreshold ? nextThreshold - charVotes : 0;
-            const nextMsg = nextLevelName ? `あと${remaining}票で「${nextLevelName}」！` : '🎉 最高レベル達成！';
-
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position:fixed;top:120px;left:50%;transform:translateX(-50%);
-                background:linear-gradient(135deg, ${meta.color}22, ${meta.color}44);
-                border:3px solid ${meta.color};color:#333;padding:24px 40px;
-                border-radius:20px;z-index:400;text-align:center;
-                font-family:sans-serif;animation:eraEventPop 0.4s ease;
-                box-shadow:0 8px 30px rgba(0,0,0,0.3);
-                backdrop-filter:blur(10px);max-width:500px;
-            `;
-            overlay.innerHTML = `
-                <div style="font-size:48px;margin-bottom:8px;">${effect.icon}</div>
-                <div style="font-size:22px;font-weight:bold;margin-bottom:8px;">${effect.desc}</div>
-                <div style="font-size:16px;color:#555;margin-bottom:4px;">いま：${currentLevelName}</div>
-                <div style="font-size:20px;letter-spacing:2px;margin:8px 0;color:${meta.color};">${progressBar}</div>
-                <div style="font-size:14px;color:#666;">${nextMsg}</div>
-            `;
-            document.body.appendChild(overlay);
-
-            playSound('event');
-
-            setTimeout(() => {
-                overlay.style.transition = 'opacity 0.5s';
-                overlay.style.opacity = '0';
-                setTimeout(() => { overlay.remove(); onEventDone(); }, 500);
-            }, 3000);
-        }
-
-        function showEraEvent(year) {
-            const event = historicalEvents[year];
-            if (!event) return;
-
-            const overlay = document.createElement('div');
-            overlay.className = 'era-event-notification';
-            overlay.style.cssText = `
-                position:fixed;top:120px;left:50%;transform:translateX(-50%);
-                background:rgba(0,0,0,0.85);color:white;padding:20px 40px;
-                border-radius:16px;z-index:400;text-align:center;
-                font-family:sans-serif;animation:eraEventPop 0.4s ease;
-                border:3px solid ${event.special === 'blackWater' ? '#333' : '#ffd700'};
-                box-shadow:0 8px 30px rgba(0,0,0,0.5);
-                max-width:500px;
-            `;
-            overlay.innerHTML = `
-                <div style="font-size:48px;margin-bottom:8px;">${event.emoji}</div>
-                <div style="font-size:14px;color:${event.special === 'blackWater' ? '#888' : '#ffd700'};margin-bottom:4px;">${year}年</div>
-                <div style="font-size:22px;font-weight:bold;">${event.text}</div>
-            `;
-            document.body.appendChild(overlay);
-
-            // Special: Black Water Incident — sea turns black
-            const hasBlackWater = event.special === 'blackWater';
-            if (hasBlackWater) {
-                showBlackWaterEffect();
-            }
-
-            // BlackWater時は表示時間を延長（6秒+フェード）して演出と合わせる
-            const displayTime = hasBlackWater ? 7000 : 3000;
-            setTimeout(() => {
-                overlay.style.transition = 'opacity 0.5s';
-                overlay.style.opacity = '0';
-                setTimeout(() => { overlay.remove(); onEventDone(); }, 500);
-            }, displayTime);
-        }
-
-        // Black Water Incident effect: sea area turns dark/black temporarily
-        function showBlackWaterEffect() {
-            const blackSea = document.createElement('div');
-            blackSea.style.cssText = `
-                position:fixed;top:0;left:0;width:100%;height:100%;z-index:300;
-                pointer-events:none;opacity:0;
-                background:linear-gradient(to top, rgba(10,5,0,0.85) 0%, rgba(20,10,5,0.6) 40%, transparent 70%);
-                transition:opacity 1.5s ease;
-            `;
-            document.body.appendChild(blackSea);
-
-            // Fade in
-            requestAnimationFrame(() => {
-                blackSea.style.opacity = '1';
-            });
-
-            // Add dripping black particles
-            const particleInterval = setInterval(() => {
-                const drop = document.createElement('div');
-                const x = Math.random() * 100;
-                drop.style.cssText = `
-                    position:fixed;left:${x}%;bottom:0;width:6px;height:6px;
-                    background:rgba(20,10,5,0.8);border-radius:50%;z-index:301;
-                    pointer-events:none;animation:blackDrop 2s ease-in forwards;
-                `;
-                document.body.appendChild(drop);
-                setTimeout(() => drop.remove(), 2000);
-            }, 100);
-
-            // Fade out after 6 seconds
-            setTimeout(() => {
-                clearInterval(particleInterval);
-                blackSea.style.opacity = '0';
-                setTimeout(() => blackSea.remove(), 1500);
-            }, 6000);
-        }
-
-        // ========== 埋め立て進化エフェクト（ポケモン進化風） ==========
-        const reclamationStages = {
-            1969: { name: '中町エリア', areas: '東野・富岡・今川・海楽・美浜・入船' },
-            1979: { name: '舞浜・新町エリア', areas: '舞浜・日の出・明海・港・千鳥' },
-            1989: { name: '全域', areas: '高洲 — 浦安の埋め立て完了！' },
-        };
-        let lastReclamationStage = 0; // 前回の埋め立て段階（0/1969/1979/1989）
-
-        function getReclamationStage(year) {
-            if (year >= 1989) return 1989;
-            if (year >= 1979) return 1979;
-            if (year >= 1969) return 1969;
-            return 0;
-        }
-
-        function checkReclamationEvolution(newYear) {
-            const newStage = getReclamationStage(newYear);
-            // 段階が上がった場合に発火（isInitialLoadガードは呼び出し元で済み）
-            if (newStage > lastReclamationStage && newStage !== 0) {
-                const stageInfo = reclamationStages[newStage];
-                if (stageInfo) {
-                    queueEvent(() => showReclamationEvolution(stageInfo));
-                }
-            }
-            lastReclamationStage = newStage;
-        }
-
-        // 埋め立て光エフェクト用（canvas描画ループで使用）
-        let reclamationGlowTimer = 0;
-
-        function showReclamationEvolution(stageInfo) {
-            // 1. 白フラッシュ（ポケモン進化の光）
-            const flash = document.createElement('div');
-            flash.style.cssText = `
-                position:fixed;top:0;left:0;width:100%;height:100%;z-index:450;
-                pointer-events:none;background:white;
-                animation:evolutionFlash 2s ease forwards;
-            `;
-            document.body.appendChild(flash);
-
-            // 2. 波紋リング
-            for (let i = 0; i < 3; i++) {
-                setTimeout(() => {
-                    const ring = document.createElement('div');
-                    ring.style.cssText = `
-                        position:fixed;top:50%;left:50%;width:200px;height:200px;
-                        border:8px solid rgba(100,200,255,0.8);border-radius:50%;
-                        z-index:451;pointer-events:none;
-                        animation:evolutionRing 1.5s ease-out forwards;
-                    `;
-                    document.body.appendChild(ring);
-                    setTimeout(() => ring.remove(), 1500);
-                }, i * 400);
-            }
-
-            // 3. 「ぐんぐん！」テキスト
-            const growText = document.createElement('div');
-            growText.style.cssText = `
-                position:fixed;top:50%;left:50%;z-index:452;pointer-events:none;
-                font-size:64px;font-weight:900;color:white;
-                text-shadow:0 0 20px rgba(100,200,255,1), 0 0 40px rgba(100,200,255,0.5);
-                font-family:sans-serif;
-                animation:evolutionGrow 1.5s ease forwards;
-            `;
-            growText.textContent = '🌳 ぐんぐん！';
-            document.body.appendChild(growText);
-
-            // 4. 2秒後: ポップ表示（3.5秒間）
-            setTimeout(() => {
-                flash.remove();
-                growText.remove();
-
-                const popup = document.createElement('div');
-                popup.style.cssText = `
-                    position:fixed;top:40%;left:50%;z-index:453;pointer-events:none;
-                    background:linear-gradient(135deg, #1a237e, #0d47a1);
-                    color:white;padding:30px 50px;border-radius:20px;
-                    text-align:center;font-family:sans-serif;
-                    border:4px solid #64b5f6;
-                    box-shadow:0 10px 40px rgba(0,100,255,0.5);
-                    animation:evolutionPopText 0.6s ease forwards;
-                `;
-                popup.innerHTML = `
-                    <div style="font-size:48px;margin-bottom:10px;">🏗️</div>
-                    <div style="font-size:28px;font-weight:bold;margin-bottom:8px;">埋め立てで「${stageInfo.name}」ができた！</div>
-                    <div style="font-size:16px;color:#90caf9;">${stageInfo.areas}</div>
-                `;
-                document.body.appendChild(popup);
-
-                // 5. 3.5秒後: ポップ消去 → 埋め立て部分が光るエフェクト
-                setTimeout(() => {
-                    popup.style.transition = 'opacity 0.8s, transform 0.8s';
-                    popup.style.opacity = '0';
-                    popup.style.transform = 'translateX(-50%) translateY(-30px)';
-                    setTimeout(() => popup.remove(), 800);
-
-                    // 新しい陸地が光って生まれるエフェクト（2秒間）
-                    showNewLandGlow();
-
-                    setTimeout(() => onEventDone(), 2500);
-                }, 3500);
-            }, 2000);
-        }
-
-        function showNewLandGlow() {
-            // canvas描画ループで使うタイマーをセット（2秒間光る）
-            reclamationGlowTimer = 2000;
-
-            // DOM側にも金色のフラッシュオーバーレイ
-            const glow = document.createElement('div');
-            glow.style.cssText = `
-                position:fixed;top:0;left:300px;right:0;bottom:0;z-index:300;
-                pointer-events:none;opacity:0;
-                background:radial-gradient(ellipse at center, rgba(255,215,0,0.4) 0%, rgba(255,215,0,0.1) 50%, transparent 80%);
-            `;
-            document.body.appendChild(glow);
-
-            // フェードイン
-            requestAnimationFrame(() => {
-                glow.style.transition = 'opacity 0.5s';
-                glow.style.opacity = '1';
-            });
-
-            // キラキラパーティクル（新しい陸地を祝福）
-            for (let i = 0; i < 25; i++) {
-                setTimeout(() => {
-                    const sparkle = document.createElement('div');
-                    const x = 300 + Math.random() * (window.innerWidth - 300);
-                    const y = Math.random() * window.innerHeight;
-                    sparkle.style.cssText = `
-                        position:fixed;left:${x}px;top:${y}px;z-index:301;
-                        pointer-events:none;font-size:${16 + Math.random() * 20}px;
-                        color:gold;text-shadow:0 0 10px gold;
-                        animation:cutinSparkle 1.2s ease-in-out forwards;
-                    `;
-                    sparkle.textContent = ['✦', '✧', '⭐', '💎'][Math.floor(Math.random() * 4)];
-                    document.body.appendChild(sparkle);
-                    setTimeout(() => sparkle.remove(), 1200);
-                }, i * 80);
-            }
-
-            // 2秒後にフェードアウト
-            setTimeout(() => {
-                glow.style.transition = 'opacity 1s';
-                glow.style.opacity = '0';
-                setTimeout(() => glow.remove(), 1000);
-            }, 1500);
-        }
+        // 投票効果・年代イベント・埋め立て進化は js/event-system.js に分離済み
 
         // Listen for real-time vote updates from Firebase
-        var isInitialLoad = true; // 初回読み込みフラグ
+        let isInitialLoad = true; // 初回読み込みフラグ
         function handleVoteSnapshot(snapshot) {
             const data = snapshot.val() || {};
-            votes = {
-                meisui: data.meisui || 0,
-                meisui_chan: data.meisui_chan || 0,
-                tsutsuji: data.tsutsuji || 0,
-                bekabune: data.bekabune || 0,
-                asari: data.asari || 0,
-                ryoushi: data.ryoushi || 0
-            };
+            votes = Object.fromEntries(CHAR_TYPES.map(t => [t, data[t] || 0]));
             totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
             updateVoteDisplay();
             updateYearDisplay();
@@ -3891,43 +3375,7 @@ h<!DOCTYPE html>
 
         // Character metadata for voting modal
 
-        // ============================================
-        // Event Queue System — show events sequentially after quiz
-        // ============================================
-        const eventQueue = [];
-        let eventQueuePlaying = false;
-
-        function queueEvent(showFn) {
-            eventQueue.push(showFn);
-        }
-
-        function playEventQueue() {
-            if (eventQueuePlaying || eventQueue.length === 0) return;
-            eventQueuePlaying = true;
-            playNextEvent();
-        }
-
-        function playNextEvent() {
-            if (eventQueue.length === 0) {
-                eventQueuePlaying = false;
-                // キュー完了 → 投票ボタン再有効化
-                window.voteInProgress = false;
-                const voteBtn = document.getElementById('voteBtn');
-                if (voteBtn) {
-                    voteBtn.style.opacity = '1';
-                    voteBtn.style.pointerEvents = 'auto';
-                }
-                return;
-            }
-            const showFn = eventQueue.shift();
-            // Each showFn should call onEventDone() when its display is finished
-            showFn();
-        }
-
-        function onEventDone() {
-            // Small gap between events
-            setTimeout(() => playNextEvent(), 500);
-        }
+        // イベントキューは js/event-system.js に分離済み
 
         function openVoteModal() {
             if (window.voteInProgress) return;
@@ -3946,6 +3394,15 @@ h<!DOCTYPE html>
         function castVote(charType) {
             // 投票スパム防止
             if (window.voteInProgress) return;
+
+            // オフライン時は投票を拒否
+            if (!navigator.onLine) {
+                const msg = document.createElement('div');
+                msg.textContent = '⚠ オフラインです。接続を確認してください';
+                pm.show('toast', msg, { duration: 3000 });
+                return;
+            }
+
             window.voteInProgress = true;
 
             // ボタン無効化
@@ -4033,7 +3490,7 @@ h<!DOCTYPE html>
         }
 
         // ========== ENDING SEQUENCE (2100) ==========
-        var activeFwInterval = null;
+        let activeFwInterval = null;
         function showEnding() {
             if (endingActive) return;
             endingActive = true;
@@ -4230,20 +3687,25 @@ h<!DOCTYPE html>
         function showVotedCertificate(charType) {
             const charName = charMetadata[charType]?.name || '';
 
-            // Create certificate overlay
-            const cert = document.createElement('div');
-            cert.className = 'voted-cert';
-            const certHTML = '<div class="cert-card"><div class="cert-border"><div class="cert-title">✨ 選挙済証 ✨</div><div class="cert-body"><p>あなたは</p><p class="cert-char">' + charName + '</p><p>に投票しました！</p><p class="cert-thanks">ありがとう！🗳️</p><p class="cert-total">現在の総投票数: ' + totalVotes + '票</p></div></div></div>';
-            cert.innerHTML = certHTML;
-            document.body.appendChild(cert);
+            const content = document.createElement('div');
+            content.innerHTML = `
+                <div class="cert-card">
+                    <div class="cert-border">
+                        <div class="cert-title">✨ 選挙済証 ✨</div>
+                        <div class="cert-body">
+                            <p>あなたは</p>
+                            <p class="cert-char">${charName}</p>
+                            <p>に投票しました！</p>
+                            <p class="cert-thanks">ありがとう！🗳️</p>
+                            <p class="cert-total">現在の総投票数: ${totalVotes}票</p>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-            // Auto-remove after 3 seconds
-            setTimeout(() => {
-                cert.style.opacity = '0';
-                setTimeout(() => cert.remove(), 500);
-            }, 3000);
+            pm.show('card', content, { duration: 3000 });
 
-            // Close vote modal
+            // 投票モーダルを閉じる
             setTimeout(() => closeVoteModal(), 500);
         }
 
@@ -4352,74 +3814,13 @@ h<!DOCTYPE html>
             }, 2700);
         }
 
-        // rankLevels (moved before updateBarGraph to avoid undefined error)
-        // 1世界線22票で完結するランクシステム
-        var rankLevels = [
-            { min: 0, rank: 'F', title: '田舎の漁村', color: '#999', star: '☆', desc: 'のどかな浦安…投票で街を発展させよう！' },
-            { min: 2, rank: 'E', title: 'ちいさな集落', color: '#88aacc', star: '⭐', desc: '少しずつ人が集まり始めた' },
-            { min: 5, rank: 'D', title: 'のどかな町', color: '#66bb6a', star: '⭐⭐', desc: '町に活気が出てきた！' },
-            { min: 9, rank: 'C', title: '発展する港町', color: '#42a5f5', star: '⭐⭐⭐', desc: '商業と観光が盛り上がってきた！' },
-            { min: 14, rank: 'B', title: 'にぎわう観光都市', color: '#ffa726', star: '⭐⭐⭐⭐', desc: '浦安は観光名所に！' },
-            { min: 18, rank: 'A', title: '輝く海辺の楽園', color: '#ef5350', star: '⭐⭐⭐⭐⭐', desc: '自然と商業が調和する理想の街！' },
-            { min: 22, rank: 'S', title: '伝説のめいすいくんワールド', color: '#e040fb', star: '🌟🌟🌟🌟🌟', desc: '全てが揃った究極の浦安！' },
-        ];
-
-        function getOverallRank() {
-            var total = getEffectiveVotes();
-            var result = rankLevels[0];
-            for (var i = rankLevels.length - 1; i >= 0; i--) {
-                if (total >= rankLevels[i].min) {
-                    result = rankLevels[i];
-                    break;
-                }
-            }
-            var nextRank = null;
-            var idx = rankLevels.indexOf(result);
-            if (idx < rankLevels.length - 1) {
-                nextRank = rankLevels[idx + 1];
-            }
-            return { current: result, next: nextRank, total: total };
-        }
-
-        // Level thresholds (moved before updateBarGraph to avoid TDZ error)
-        // 1世界線22票で完結するレベルシステム
-        const levelThresholds = [
-            { min: 0, max: 4, title: "はらっぱ", emoji: "🌾" },
-            { min: 5, max: 9, title: "ちいさなむら", emoji: "🏘️" },
-            { min: 10, max: 14, title: "にぎやかなまち", emoji: "🏙️" },
-            { min: 15, max: 19, title: "すてきなみやこ", emoji: "👑" },
-            { min: 20, max: 22, title: "ゆめのまち", emoji: "✨" },
-        ];
-
-        function getCurrentLevel() {
-            const effective = getEffectiveVotes();
-            for (let i = levelThresholds.length - 1; i >= 0; i--) {
-                if (effective >= levelThresholds[i].min) {
-                    return levelThresholds[i];
-                }
-            }
-            return levelThresholds[0];
-        }
+        // rankLevels, getOverallRank, levelThresholds, getCurrentLevel は js/game-logic.js に分離済み
 
         function updateBarGraph() {
             // CHANGE 3: Improved ranking panel
             const barsEl = document.getElementById('barGraphBars');
-            const charNames = {
-                meisui: 'イチョウめいすいくん',
-                meisui_chan: 'ビーナスめいちゃん',
-                tsutsuji: 'ツツジめいちゃん',
-                bekabune: '浦安の海めいすいくん',
-                asari: '屋形船めいすいくん',
-                ryoushi: '漁師めいすいくん'
-            };
-            const colors = {
-                meisui: '#ffd700',
-                meisui_chan: '#ff6b6b',
-                tsutsuji: '#e040fb',
-                bekabune: '#42a5f5',
-                asari: '#ff8a65',
-                ryoushi: '#66bb6a'
-            };
+            const charNames = Object.fromEntries(CHAR_TYPES.map(t => [t, charMetadata[t].name]));
+            const colors = Object.fromEntries(CHAR_TYPES.map(t => [t, charMetadata[t].color]));
 
             // Create sorted ranking
             const sorted = Object.entries(votes).sort((a, b) => b[1] - a[1]);
@@ -4480,7 +3881,7 @@ h<!DOCTYPE html>
         // (rankLevels + getOverallRank moved before updateBarGraph)
         // ============================================
 
-        var areaRanks = [
+        let areaRanks = [
             { key: 'meisui', name: 'イチョウ並木', emoji: '🌳', color: '#daa520',
               levels: ['荒地', '若木が1本', '並木道の始まり', '黄金のイチョウ通り', '黄金の森'] },
             { key: 'tsutsuji', name: '花と緑の庭園', emoji: '🌺', color: '#e040fb',
@@ -4497,14 +3898,7 @@ h<!DOCTYPE html>
 
         // (getOverallRank moved before updateBarGraph)
 
-        function getAreaLevel(key) {
-            var v = votes[key] || 0;
-            if (v >= 10) return 4;
-            if (v >= 6) return 3;
-            if (v >= 3) return 2;
-            if (v >= 1) return 1;
-            return 0;
-        }
+        // getAreaLevel は js/game-logic.js に分離済み
 
         // ============================================
         // チュートリアル（あそびかた）
@@ -4593,9 +3987,9 @@ h<!DOCTYPE html>
         }
 
         function openRankPopup() {
-            var info = getOverallRank();
-            var r = info.current;
-            var html = '';
+            let info = getOverallRank();
+            let r = info.current;
+            let html = '';
 
             // ヘッダー
             html += '<div style="text-align:center;margin-bottom:20px;">';
@@ -4618,8 +4012,8 @@ h<!DOCTYPE html>
             html += '</div>';
             // プログレスバー
             if (info.next) {
-                var prevMin = r.min;
-                var progress = ((info.total - prevMin) / (info.next.min - prevMin)) * 100;
+                let prevMin = r.min;
+                let progress = ((info.total - prevMin) / (info.next.min - prevMin)) * 100;
                 html += '<div style="background:#ddd;border-radius:8px;height:12px;overflow:hidden;">';
                 html += '<div style="background:linear-gradient(90deg,' + r.color + ',' + (info.next.color) + ');height:100%;border-radius:8px;width:' + Math.min(progress, 100) + '%;transition:width 0.5s;"></div>';
                 html += '</div>';
@@ -4634,11 +4028,11 @@ h<!DOCTYPE html>
             html += '<div style="font-size:14px;font-weight:bold;color:#555;margin-bottom:10px;">🏘️ エリア別 発展状況</div>';
 
             areaRanks.forEach(function(area) {
-                var lv = getAreaLevel(area.key);
-                var v = votes[area.key] || 0;
-                var lvName = area.levels[lv];
-                var maxLv = area.levels.length - 1;
-                var pct = (lv / maxLv) * 100;
+                let lv = getAreaLevel(area.key);
+                let v = votes[area.key] || 0;
+                let lvName = area.levels[lv];
+                let maxLv = area.levels.length - 1;
+                let pct = (lv / maxLv) * 100;
 
                 html += '<div style="background:#fafafa;border-radius:12px;padding:10px 14px;margin-bottom:8px;border:1px solid #eee;">';
                 html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
@@ -4657,9 +4051,9 @@ h<!DOCTYPE html>
                 html += '</div>';
                 // レベルドット
                 html += '<div style="display:flex;justify-content:space-between;margin-top:4px;">';
-                for (var d = 0; d <= maxLv; d++) {
-                    var dotColor = d <= lv ? area.color : '#ccc';
-                    var dotSize = d <= lv ? '8px' : '6px';
+                for (let d = 0; d <= maxLv; d++) {
+                    let dotColor = d <= lv ? area.color : '#ccc';
+                    let dotSize = d <= lv ? '8px' : '6px';
                     html += '<div style="width:' + dotSize + ';height:' + dotSize + ';border-radius:50%;background:' + dotColor + ';"></div>';
                 }
                 html += '</div>';
@@ -4668,16 +4062,16 @@ h<!DOCTYPE html>
 
             // 建設した建物一覧
             html += '<div style="font-size:14px;font-weight:bold;color:#555;margin:18px 0 10px;">🏗️ 建設した建物</div>';
-            var allBuildings = buildingsList.concat(charBuildingsList || []);
-            var builtCount = 0;
-            var totalBuildingCount = allBuildings.length;
+            let allBuildings = buildingsList.concat(charBuildingsList || []);
+            let builtCount = 0;
+            let totalBuildingCount = allBuildings.length;
             allBuildings.forEach(function(b) {
-                var isBuilt = builtBuildings.includes(b.id);
+                let isBuilt = builtBuildings.includes(b.id);
                 if (isBuilt) builtCount++;
-                var icon = isBuilt ? '✅' : '🔒';
-                var opacity = isBuilt ? '1' : '0.4';
-                var bgColor = isBuilt ? '#f0faf0' : '#f5f5f5';
-                var charLabel = b.char ? (' — ' + (charMetadata[b.char] ? charMetadata[b.char].name : b.char) + 'の力') : '';
+                let icon = isBuilt ? '✅' : '🔒';
+                let opacity = isBuilt ? '1' : '0.4';
+                let bgColor = isBuilt ? '#f0faf0' : '#f5f5f5';
+                let charLabel = b.char ? (' — ' + (charMetadata[b.char] ? charMetadata[b.char].name : b.char) + 'の力') : '';
                 html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;margin-bottom:4px;border-radius:10px;background:' + bgColor + ';opacity:' + opacity + ';">';
                 html += '<span style="font-size:20px;">' + icon + '</span>';
                 html += '<div style="flex:1;">';
@@ -4759,512 +4153,11 @@ h<!DOCTYPE html>
         // クイズシステム（V3新機能）
         // ============================================
         
-        // クイズデータは quizzes.json から読み込み（編集はJSONファイルで）
-        let quizzes = [];
-        fetch('quizzes.json')
-            .then(r => r.json())
-            .then(data => { quizzes = data; console.log('📝 クイズ読み込み完了:', data.length, '問'); })
-            .catch(err => {
-                console.error('クイズ読み込み失敗:', err);
-                // フォールバック: 最低限の1問
-                quizzes = [{ q: "せんきょけんは なんさいから？", a: "18さい", choices: ["18さい", "20さい", "21さい"], explanation: "2016ねんに 20さいから 18さいに かわったよ", category: "せんきょのきほん" }];
-            });
+        // クイズシステムは js/quiz-system.js に分離済み
 
-        // Track used quiz indices to avoid repeats
-        let usedQuizIndices = [];
+        // 建物システムは js/building-system.js に分離済み
 
-        function getRandomQuiz() {
-            // Reset if all questions used
-            if (usedQuizIndices.length >= quizzes.length) {
-                usedQuizIndices = [];
-            }
-            // Pick unused question
-            let idx;
-            do {
-                idx = Math.floor(Math.random() * quizzes.length);
-            } while (usedQuizIndices.includes(idx));
-            usedQuizIndices.push(idx);
-            return quizzes[idx];
-        }
-        
-        function showQuizModal(charType) {
-            const quiz = getRandomQuiz();
-            const shuffled = [...quiz.choices].sort(() => Math.random() - 0.5);
-            
-            const quizModal = document.createElement('div');
-            quizModal.id = 'quizModal';
-            quizModal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                z-index: 600;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: rgba(0, 0, 0, 0.4);
-            `;
-            
-            // Store quiz data in JS to avoid HTML attribute escaping issues
-            window._currentQuizData = { explanation: quiz.explanation, answer: quiz.a, charType: charType };
-            let buttonsHTML = '';
-            shuffled.forEach((choice, idx) => {
-                const isCorrect = choice === quiz.a;
-                const escapedChoice = choice.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                buttonsHTML += `<button style="
-                    width: 100%;
-                    padding: 16px;
-                    margin: 8px 0;
-                    background: linear-gradient(135deg, #ffc9c9, #ffb3b3);
-                    border: 2px solid #ff9999;
-                    border-radius: 12px;
-                    font-size: 18px;
-                    font-weight: bold;
-                    color: #333;
-                    cursor: pointer;
-                    min-height: 60px;
-                    font-family: sans-serif;
-                    transition: all 0.2s;
-                " data-correct="${isCorrect}" onclick="handleQuizAnswer(this, ${isCorrect})">${escapedChoice}</button>`;
-            });
-            
-            quizModal.innerHTML = `
-                <div style="
-                    background: linear-gradient(135deg, #fffdf0, #fffbf0);
-                    border-radius: 20px;
-                    padding: 30px;
-                    max-width: 500px;
-                    width: 90%;
-                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-                ">
-                    <h2 style="color: #d32f2f; margin-bottom: 20px; font-size: 24px; text-align: center;">クイズ！</h2>
-                    <p style="font-size: 20px; color: #333; margin-bottom: 20px; text-align: center; line-height: 1.6;">${quiz.q}</p>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        ${buttonsHTML}
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(quizModal);
-        }
-        
-        function handleQuizAnswer(button, isCorrect) {
-            const quizData = window._currentQuizData || {};
-            const explanation = quizData.explanation || '';
-            const charType = quizData.charType || '';
-            const correctAnswer = quizData.answer || '';
-            const modal = document.getElementById('quizModal');
-            const buttons = modal.querySelectorAll('button');
-            buttons.forEach(btn => btn.disabled = true);
-
-            if (isCorrect) {
-                playSound('correct');
-                button.style.background = 'linear-gradient(135deg, #90ee90, #70dd70)';
-                button.style.borderColor = '#40dd40';
-                showQuizFeedback('🎉 せいかい！', '#2d8659', true);
-            } else {
-                playSound('wrong');
-                button.style.background = 'linear-gradient(135deg, #ff6b6b, #ff5555)';
-                button.style.borderColor = '#ff3333';
-                showQuizFeedback('😢 ざんねん！\nこたえは「' + (correctAnswer || '') + '」', '#d32f2f', false);
-            }
-
-            setTimeout(() => {
-                modal.remove();
-                showExplanationCard(explanation);
-            }, 3500);
-        }
-
-        function showQuizFeedback(text, color, isCorrect) {
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.6);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 700;
-                animation: fadeIn 0.3s ease;
-            `;
-
-            const card = document.createElement('div');
-            const bgColor = isCorrect ? '#e8f5e9' : '#fce4ec';
-            const borderColor = isCorrect ? '#4caf50' : '#e53935';
-            card.style.cssText = `
-                background: ${bgColor};
-                border: 6px solid ${borderColor};
-                border-radius: 24px;
-                padding: 40px 60px;
-                box-shadow: 0 15px 50px rgba(0,0,0,0.4);
-                animation: popScale 0.4s ease;
-                max-width: 80%;
-            `;
-
-            const feedback = document.createElement('div');
-            feedback.style.cssText = `
-                font-size: 64px;
-                font-weight: 900;
-                color: ${color};
-                text-align: center;
-                white-space: pre-wrap;
-                line-height: 1.5;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.15);
-                font-family: sans-serif;
-            `;
-            feedback.textContent = text;
-            card.appendChild(feedback);
-
-            overlay.appendChild(card);
-            document.body.appendChild(overlay);
-
-            setTimeout(() => {
-                overlay.style.opacity = '0';
-                overlay.style.transition = 'opacity 0.5s ease';
-                setTimeout(() => overlay.remove(), 500);
-            }, 3000);
-        }
-
-        function showExplanationCard(explanation) {
-            const card = document.createElement('div');
-            card.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
-                border: 3px solid #4caf50;
-                border-radius: 16px;
-                padding: 25px;
-                text-align: center;
-                z-index: 600;
-                font-size: 20px;
-                color: #333;
-                max-width: 450px;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-                line-height: 1.8;
-            `;
-            card.innerHTML = `なるほど！<br>${explanation}`;
-            document.body.appendChild(card);
-            
-            setTimeout(() => {
-                card.style.opacity = '0';
-                card.style.transition = 'opacity 0.5s';
-                setTimeout(() => {
-                    card.remove();
-                    // Play queued events after quiz flow is fully done
-                    playEventQueue();
-                }, 500);
-            }, 6000);
-        }
-
-        // ============================================
-        // ビルディング解放システム（V3新機能）
-        // ============================================
-        
-        // ========== 建物リスト（累計票数で発動） ==========
-        const buildingsList = [
-            // 序盤（1〜5票）
-            { id: "house", name: "おうち", unlock_votes: 1, category: "住居", emoji: "🏠" },
-            { id: "school", name: "がっこう", unlock_votes: 3, category: "教育", emoji: "🏫" },
-            // 中盤（5〜12票）
-            { id: "park", name: "こうえん", unlock_votes: 5, category: "環境", emoji: "🌳" },
-            { id: "library", name: "としょかん", unlock_votes: 7, category: "文化", emoji: "📚" },
-            { id: "hospital", name: "びょういん", unlock_votes: 9, category: "医療", emoji: "🏥" },
-            { id: "station", name: "えき", unlock_votes: 11, category: "交通", emoji: "🚉" },
-            // 後半（13〜20票）
-            { id: "fire_station", name: "しょうぼうしょ", unlock_votes: 13, category: "防災", emoji: "🚒" },
-            { id: "community_center", name: "こうみんかん", unlock_votes: 15, category: "交流", emoji: "🏛️" },
-            { id: "museum", name: "はくぶつかん", unlock_votes: 17, category: "文化", emoji: "🏛️" },
-            { id: "city_hall", name: "しやくしょ", unlock_votes: 19, category: "行政", emoji: "🏢" },
-            // 終盤（20〜22票）
-            { id: "cultural_hall", name: "ぶんかかいかん", unlock_votes: 20, category: "文化", emoji: "🎭" },
-            { id: "sanbanze", name: "さんばんせかんさつかん", unlock_votes: 12, category: "自然", emoji: "🌊", special: true },
-        ];
-
-        // ========== キャラ別建物（各キャラへの投票数で発動） ==========
-        const charBuildingsList = [
-            // イチョウめいすいくん → 自然・緑化
-            { id: "ginkgo_park", name: "イチョウこうえん", char: "meisui", unlock_votes: 2, emoji: "🌳" },
-            { id: "botanical_garden", name: "しょくぶつえん", char: "meisui", unlock_votes: 5, emoji: "🌿" },
-            { id: "forest_school", name: "もりのがっこう", char: "meisui", unlock_votes: 8, emoji: "🏕️" },
-            // ツツジめいちゃん → 花・子育て
-            { id: "flower_road", name: "はなみち", char: "tsutsuji", unlock_votes: 2, emoji: "🌸" },
-            { id: "nursery", name: "ほいくえん", char: "tsutsuji", unlock_votes: 5, emoji: "👶" },
-            { id: "kids_plaza", name: "こどもひろば", char: "tsutsuji", unlock_votes: 8, emoji: "🎠" },
-            // ビーナスめいちゃん → 観光・リゾート
-            { id: "beach_house", name: "うみのいえ", char: "meisui_chan", unlock_votes: 2, emoji: "🏖️" },
-            { id: "hotel", name: "ホテル", char: "meisui_chan", unlock_votes: 5, emoji: "🏨" },
-            { id: "aquarium", name: "すいぞくかん", char: "meisui_chan", unlock_votes: 8, emoji: "🐠" },
-            // 海めいすいくん → 海・環境
-            { id: "fishing_pier", name: "つりばし", char: "bekabune", unlock_votes: 2, emoji: "🎣" },
-            { id: "marine_center", name: "うみのセンター", char: "bekabune", unlock_votes: 5, emoji: "🐬" },
-            { id: "coral_reef", name: "サンゴしょく", char: "bekabune", unlock_votes: 8, emoji: "🪸" },
-            // 屋形船めいすいくん → 伝統・文化
-            { id: "shrine", name: "じんじゃ", char: "asari", unlock_votes: 2, emoji: "⛩️" },
-            { id: "festival_hall", name: "おまつりかいかん", char: "asari", unlock_votes: 5, emoji: "🏮" },
-            { id: "fireworks_spot", name: "はなびスポット", char: "asari", unlock_votes: 8, emoji: "🎆" },
-            // 漁師めいすいくん → 商業・産業
-            { id: "fish_shop", name: "さかなや", char: "ryoushi", unlock_votes: 2, emoji: "🐟" },
-            { id: "market", name: "いちば", char: "ryoushi", unlock_votes: 5, emoji: "🏪" },
-            { id: "port", name: "みなと", char: "ryoushi", unlock_votes: 8, emoji: "⚓" },
-        ];
-        
-        var builtBuildings = JSON.parse(localStorage.getItem('meisui_builtBuildings') || '[]');
-
-        // Firebase同期: 建物アンロック状態を全端末で共有
-        firebaseDb.ref('stats/builtBuildings').on('value', snap => {
-            const data = snap.val();
-            if (data && Array.isArray(data)) {
-                builtBuildings = data;
-                localStorage.setItem('meisui_builtBuildings', JSON.stringify(builtBuildings));
-            }
-        });
-
-        // 初回ロード時に建物状態を静かに同期（通知なし）
-        function silentBuildingSync() {
-            const effective = getEffectiveVotes();
-            let changed = false;
-            buildingsList.forEach(b => {
-                if (effective >= b.unlock_votes && !builtBuildings.includes(b.id)) {
-                    builtBuildings.push(b.id);
-                    changed = true;
-                }
-            });
-            charBuildingsList.forEach(b => {
-                const cv = Math.max(0, (votes[b.char] || 0) - (decorationOffset[b.char] || 0));
-                if (cv >= b.unlock_votes && !builtBuildings.includes(b.id)) {
-                    builtBuildings.push(b.id);
-                    changed = true;
-                }
-            });
-            if (changed) {
-                localStorage.setItem('meisui_builtBuildings', JSON.stringify(builtBuildings));
-                saveBuildingsToFirebase();
-            }
-        }
-
-        function saveBuildingsToFirebase() {
-            firebaseDb.ref('stats/builtBuildings').set(builtBuildings).catch(err => {
-                console.error('建物同期失敗:', err);
-            });
-        }
-
-        function checkBuildingUnlock(prevVotes) {
-            const effective = getEffectiveVotes();
-            let newUnlock = false;
-
-            // 累計票数ベースの建物
-            buildingsList.forEach(building => {
-                if (effective >= building.unlock_votes && !builtBuildings.includes(building.id)) {
-                    builtBuildings.push(building.id);
-                    newUnlock = true;
-                    queueEvent(() => showBuildingNotification(building));
-                }
-            });
-
-            // キャラ別票数ベースの建物
-            charBuildingsList.forEach(building => {
-                const charVotes = Math.max(0, (votes[building.char] || 0) - (decorationOffset[building.char] || 0));
-                if (charVotes >= building.unlock_votes && !builtBuildings.includes(building.id)) {
-                    builtBuildings.push(building.id);
-                    newUnlock = true;
-                    const meta = charMetadata[building.char];
-                    queueEvent(() => showBuildingNotification({
-                        ...building,
-                        charName: meta ? meta.name : '',
-                        charColor: meta ? meta.color : '#ffd700'
-                    }));
-                }
-            });
-
-            if (newUnlock) {
-                localStorage.setItem('meisui_builtBuildings', JSON.stringify(builtBuildings));
-                saveBuildingsToFirebase();
-            }
-        }
-        
-        function showBuildingNotification(building) {
-            
-            // V5 Features: Play sound for building unlock
-            playSound('unlock');
-            const notif = document.createElement('div');
-            notif.style.cssText = `
-                position: fixed;
-                top: 80px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: linear-gradient(135deg, #fff3e0, #ffe0b2);
-                border: 3px solid #ff9800;
-                border-radius: 16px;
-                padding: 20px;
-                z-index: 400;
-                text-align: center;
-                font-size: 24px;
-                font-weight: bold;
-                color: #ff6f00;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-                animation: slideDown 0.5s ease-out;
-                font-family: sans-serif;
-            `;
-            const emojiIcon = building.emoji || '🏗️';
-            const charLine = building.charName ? `<div style="font-size:14px;color:#888;margin-top:4px;">${building.charName}の力で建設！</div>` : '';
-            notif.innerHTML = `${emojiIcon} ${building.name}が たった！${charLine}`;
-            document.body.appendChild(notif);
-            
-            setTimeout(() => {
-                notif.style.opacity = '0';
-                notif.style.transition = 'opacity 0.5s';
-                setTimeout(() => { notif.remove(); onEventDone(); }, 500);
-            }, 3000);
-        }
-
-        // ============================================
-        // イベントシステム（V3新機能）
-        // ============================================
-        
-        var lastEventVotes = 0;
-        
-        const goodEvents = [
-            { name: "おまつりだ！", trigger: "random", effect: "happiness+10", probability: 0.12, emoji: "🎉" },
-            { name: "あたらしいお店がオープン", trigger: "random", effect: "tax_revenue+5%", probability: 0.10, emoji: "🏪" },
-            { name: "三番瀬にめずらしい鳥が来た", trigger: "votes>8", effect: "population+2", probability: 0.08, emoji: "🦅" },
-            { name: "うらやすシティマラソン開催", trigger: "random", effect: "happiness+8", probability: 0.08, emoji: "🏃" },
-            { name: "モルック大会 開催！", trigger: "random", effect: "happiness+15", probability: 0.10, emoji: "🪵" },
-            { name: "イチョウ並木が色づいた！", trigger: "char_meisui>3", effect: "happiness+5", probability: 0.15, emoji: "🍂" },
-            { name: "花畑にチョウチョが来た！", trigger: "char_tsutsuji>3", effect: "happiness+5", probability: 0.15, emoji: "🦋" },
-            { name: "ビーチでイルカが見れた！", trigger: "char_meisui_chan>3", effect: "happiness+8", probability: 0.12, emoji: "🐬" },
-            { name: "海がとてもきれいになった！", trigger: "char_bekabune>3", effect: "happiness+8", probability: 0.12, emoji: "🌊" },
-            { name: "屋形船まつり 大盛況！", trigger: "char_asari>3", effect: "happiness+10", probability: 0.12, emoji: "🏮" },
-            { name: "魚市場に大行列！", trigger: "char_ryoushi>3", effect: "happiness+10", probability: 0.12, emoji: "🐟" },
-        ];
-        const challengeEvents = [
-            { name: "たいふうが きた！", trigger: "random", effect: "infrastructure_decay+10", mitigation: "fire_station", probability: 0.08, emoji: "🌀" },
-            { name: "えきまえが こんざつ！", trigger: "votes>8", effect: "happiness-5", mitigation: "station", probability: 0.07, emoji: "🚉" },
-            { name: "こうれいかが すすんだ", trigger: "votes>12", effect: "service_demand+15%", mitigation: "hospital", probability: 0.06, emoji: "👴" },
-            { name: "じしん！えきじょうかに ちゅうい", trigger: "random", effect: "infrastructure_decay+15", mitigation: "fire_station", probability: 0.04, emoji: "💥", urayasu_special: true },
-            { name: "ゴミがふえてきた…", trigger: "votes>6", effect: "happiness-3", probability: 0.06, emoji: "🗑️" },
-            { name: "さかなが へってきた…", trigger: "char_ryoushi>5", effect: "happiness-5", probability: 0.08, emoji: "😢" },
-        ];
-        
-        function checkEventTrigger() {
-            const votesSince = totalVotes - lastEventVotes;
-            if (votesSince >= 5) {
-                lastEventVotes = totalVotes;
-                triggerRandomEvent();
-            }
-        }
-        
-        function triggerRandomEvent() {
-            const good = goodEvents.filter(e => canTriggerEvent(e));
-            const bad = challengeEvents.filter(e => canTriggerEvent(e));
-            
-            const allEvents = [...good, ...bad];
-            if (allEvents.length === 0) return;
-            
-            const event = allEvents[Math.floor(Math.random() * allEvents.length)];
-            queueEvent(() => showEventPopup(event));
-        }
-        
-        function canTriggerEvent(event) {
-            const prob = event.probability || 0.1;
-            if (event.trigger === 'random') return Math.random() < prob;
-            if (event.trigger.includes('votes>')) {
-                const threshold = parseInt(event.trigger.split('>')[1]);
-                return getEffectiveVotes() > threshold && Math.random() < prob;
-            }
-            if (event.trigger.startsWith('char_')) {
-                // キャラ別条件: "char_meisui>3" → meisui票が3超
-                const match = event.trigger.match(/char_(\w+)>(\d+)/);
-                if (match) {
-                    const charType = match[1];
-                    const threshold = parseInt(match[2]);
-                    const charVotes = Math.max(0, (votes[charType] || 0) - (decorationOffset[charType] || 0));
-                    return charVotes > threshold && Math.random() < prob;
-                }
-            }
-            if (event.trigger.includes('population>')) {
-                return Math.random() < prob;
-            }
-            return Math.random() < prob;
-        }
-        
-        function showEventPopup(event) {
-            
-            // V5 Features: Play sound for event
-            playSound('event');
-            const popup = document.createElement('div');
-            popup.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: linear-gradient(135deg, #fff9e6, #fff3cc);
-                border: 4px solid #ffc107;
-                border-radius: 20px;
-                padding: 30px;
-                z-index: 450;
-                text-align: center;
-                font-size: 28px;
-                font-weight: bold;
-                color: #f57f17;
-                max-width: 500px;
-                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-                animation: popupBounce 0.5s ease-out;
-                font-family: sans-serif;
-            `;
-            
-            const eventText = event.name.includes('た！') || event.name.includes('開催') || event.name.includes('…')
-                ? event.name
-                : event.name + '！';
-            const emojiIcon = event.emoji || '📢';
-
-            popup.innerHTML = `<div style="font-size:48px;margin-bottom:8px;">${emojiIcon}</div>${eventText}`;
-            document.body.appendChild(popup);
-            
-            setTimeout(() => {
-                popup.style.opacity = '0';
-                popup.style.transition = 'opacity 0.5s';
-                setTimeout(() => { popup.remove(); onEventDone(); }, 500);
-            }, 4000);
-        }
-
-        // ============================================
-        // レベルシステム更新（V3新機能）
-        // (levelThresholds + getCurrentLevel moved before updateBarGraph)
-        // ============================================
-        
-        function showLevelUpAnimation(newLevel) {
-            const anim = document.createElement('div');
-            anim.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                z-index: 550;
-                text-align: center;
-                animation: levelUpBurst 1.5s ease-out forwards;
-                font-family: sans-serif;
-            `;
-            anim.innerHTML = `
-                <div style="font-size: 60px; margin-bottom: 20px;">${newLevel.emoji}</div>
-                <div style="
-                    font-size: 48px;
-                    font-weight: bold;
-                    color: #fff;
-                    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
-                    margin-bottom: 10px;
-                ">${newLevel.title}</div>
-                <div style="font-size: 24px; color: #ffd700;">に レベルアップ！</div>
-            `;
-            document.body.appendChild(anim);
-            
-            setTimeout(() => { anim.remove(); onEventDone(); }, 3000);
-        }
+        // ランダムイベント・レベルアップは js/event-system.js に分離済み
 
     </script>
 </body>
