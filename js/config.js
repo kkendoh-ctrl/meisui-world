@@ -42,8 +42,7 @@ const landmarks = [
     { x: 1067, y: 823, w: 60, h: 40, type: 'sports', name: '東京湾', emoji: '🌊' },
     { x: 540, y: 771, w: 60, h: 40, type: 'shop', name: '舞浜リゾート', emoji: '🎢' },
 
-    // 道路・IC
-    { x: 1146, y: 74, w: 60, h: 40, type: 'vote', name: '浦安IC', emoji: '🛣️' },
+    // 道路・周辺
     { x: 803, y: 190, w: 50, h: 40, type: 'shop', name: '国道沿い商店', emoji: '🏪' },
 
     // 投票所（6箇所）
