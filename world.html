@@ -3318,7 +3318,7 @@ h<!DOCTYPE html>
         // 投票効果・年代イベント・埋め立て進化は js/event-system.js に分離済み
 
         // Listen for real-time vote updates from Firebase
-        let isInitialLoad = true; // 初回読み込みフラグ
+        // isInitialLoad は js/firebase.js で定義済み
         function handleVoteSnapshot(snapshot) {
             const data = snapshot.val() || {};
             votes = Object.fromEntries(CHAR_TYPES.map(t => [t, data[t] || 0]));
