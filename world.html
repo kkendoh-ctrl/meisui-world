@@ -1431,18 +1431,20 @@ h<!DOCTYPE html>
 
         // 投票効果の位置配列（地形制約付き）
         // 陸地系: イチョウ、ツツジ、魚市場 → 浦安市内のみ
-        const ginkgoPositions = generatePositions(1001, 40, 490, 1170, 60, 720, 'land');
-        const azaleaPositions = generatePositions(2002, 40, 490, 1170, 60, 720, 'land');
-        const fishMarketPositions = generatePositions(6006, 25, 490, 1170, 60, 720, 'land');
-        // 海岸系: ビーチ → 市域の南端付近
-        const beachPositions = generatePositions(3003, 25, 490, 1150, 600, 850, 'land');
-        // 海系: 海洋生物、屋形船 → 海・川のみ
-        const marinePositions = generatePositions(4004, 30, 900, 1800, 400, 1050, 'sea');
-        const boatPositions = generatePositions(5005, 20, 900, 1750, 500, 1000, 'sea');
-        // あさり → 右寄りの浅瀬・干潟エリア
-        const asariClamPositions = generatePositions(7007, 40, 800, 1750, 800, 1060, 'sea');
-        // のり養殖フレーム → 右寄りの海上（浦安の伝統産業エリア）
-        const noriFramePositions = generatePositions(8008, 30, 700, 1600, 700, 1050, 'sea');
+        // ゾーン枠からxMin/xMax/yMin/yMaxを取得（fetchより先に参照するためfixedPosのデフォルト値を使用）
+        const lz = fixedPos.zone_land_tl, lzBr = fixedPos.zone_land_br;
+        const sz = fixedPos.zone_sea_tl,  szBr = fixedPos.zone_sea_br;
+        const lxMin = lz.x, lxMax = lzBr.x, lyMin = lz.y, lyMax = lzBr.y;
+        const sxMin = sz.x, sxMax = szBr.x, syMin = sz.y, syMax = szBr.y;
+
+        const ginkgoPositions      = generatePositions(1001, 40, lxMin, lxMax, lyMin, lyMax, 'land');
+        const azaleaPositions      = generatePositions(2002, 40, lxMin, lxMax, lyMin, lyMax, 'land');
+        const fishMarketPositions  = generatePositions(6006, 25, lxMin, lxMax, lyMin, lyMax, 'land');
+        const beachPositions       = generatePositions(3003, 25, lxMin, lxMax, Math.max(lyMin, syMin - 100), lyMax, 'land');
+        const marinePositions      = generatePositions(4004, 30, sxMin, sxMax, syMin, syMax, 'sea');
+        const boatPositions        = generatePositions(5005, 20, sxMin, sxMax, syMin, syMax, 'sea');
+        const asariClamPositions   = generatePositions(7007, 40, sxMin, sxMax, Math.max(syMin, lyMax - 100), syMax, 'sea');
+        const noriFramePositions   = generatePositions(8008, 30, sxMin, sxMax, syMin, syMax, 'sea');
 
         // 固定座標オブジェクトの位置（fixed-positions.jsonと同じ値をデフォルトに設定）
         const fixedPos = {
@@ -1467,6 +1469,11 @@ h<!DOCTYPE html>
             kasai_bridge_end:    { x: 837,  y: 326  },
             ropeway_label:       { x: 1051, y: 315  },
             marine_city:         { x: 938,  y: 988  },
+            // ランダム配置ゾーン枠（座標エディタで調整可）
+            zone_land_tl:        { x: 680,  y: 60   },
+            zone_land_br:        { x: 1750, y: 850  },
+            zone_sea_tl:         { x: 620,  y: 600  },
+            zone_sea_br:         { x: 1920, y: 1080 },
         };
         // fixed-positions.json があれば座標を上書き
         fetch('fixed-positions.json').then(r => r.json()).then(data => {

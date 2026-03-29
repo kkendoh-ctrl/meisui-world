@@ -85,6 +85,12 @@
 
     <span class="group-label">投票所:</span>
     <div id="grp_vote"></div>
+
+    <span class="group-label" style="color:#aaffaa;">🌳 陸エリア枠:</span>
+    <div id="grp_zone_land"></div>
+
+    <span class="group-label" style="color:#aaddff;">🐟 海エリア枠:</span>
+    <div id="grp_zone_sea"></div>
   </div>
   <div class="canvas-wrap">
     <canvas id="canvas"></canvas>
@@ -143,6 +149,12 @@
       { id: 'lm_東京湾',         label: '東京湾',         color: '#1976d2', group: 'facility',   x: 454,  y: 981  },
       { id: 'lm_舞浜リゾート',   label: '舞浜リゾート',   color: '#e91e63', group: 'facility',   x: 690,  y: 882  },
       { id: 'lm_国道沿い商店',   label: '国道沿い商店',   color: '#ff9800', group: 'facility',   x: 1078, y: 462  },
+      // 陸エリア枠（木・花・建物のランダム配置範囲）
+      { id: 'zone_land_tl', label: '陸エリア 左上', color: '#66ff66', group: 'zone_land', x: 680,  y: 60   },
+      { id: 'zone_land_br', label: '陸エリア 右下', color: '#66ff66', group: 'zone_land', x: 1750, y: 850  },
+      // 海エリア枠（魚・サンゴ・屋形船・あさり・のりのランダム配置範囲）
+      { id: 'zone_sea_tl',  label: '海エリア 左上', color: '#44aaff', group: 'zone_sea',  x: 620,  y: 600  },
+      { id: 'zone_sea_br',  label: '海エリア 右下', color: '#44aaff', group: 'zone_sea',  x: 1920, y: 1080 },
       // 投票所
       { id: 'lm_市役所',       label: '市役所',       color: '#f44336', group: 'vote', x: 1081, y: 420  },
       { id: 'lm_中央公民館',   label: '中央公民館',   color: '#f44336', group: 'vote', x: 957,  y: 237  },
@@ -163,7 +175,7 @@
     mapImg.onload = () => { loadSaved(); draw(); };
 
     // グループ別ボタン生成
-    const groups = ['meisui_chan', 'bekabune', 'asari', 'ryoushi', 'future', 'station', 'facility', 'vote'];
+    const groups = ['meisui_chan', 'bekabune', 'asari', 'ryoushi', 'future', 'station', 'facility', 'vote', 'zone_land', 'zone_sea'];
     groups.forEach(grp => {
       const container = document.getElementById('grp_' + grp);
       if (!container) return;
@@ -190,24 +202,65 @@
       });
     }
 
+    // ゾーン枠の描画（マーカーより先に描く）
+    function drawZones() {
+      const zones = [
+        { tl: 'zone_land_tl', br: 'zone_land_br', color: '100,255,100', label: '🌳 陸エリア' },
+        { tl: 'zone_sea_tl',  br: 'zone_sea_br',  color: '68,170,255',  label: '🐟 海エリア' },
+      ];
+      zones.forEach(z => {
+        const tl = markers.find(m => m.id === z.tl);
+        const br = markers.find(m => m.id === z.br);
+        if (!tl || !br) return;
+        const x = Math.min(tl.x, br.x), y = Math.min(tl.y, br.y);
+        const w = Math.abs(br.x - tl.x), h = Math.abs(br.y - tl.y);
+        // 塗り
+        ctx.fillStyle = `rgba(${z.color}, 0.08)`;
+        ctx.fillRect(x, y, w, h);
+        // 点線の枠
+        ctx.strokeStyle = `rgba(${z.color}, 0.7)`;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([12, 6]);
+        ctx.strokeRect(x, y, w, h);
+        ctx.setLineDash([]);
+        // ラベル
+        ctx.font = 'bold 18px sans-serif';
+        ctx.fillStyle = `rgba(${z.color}, 0.9)`;
+        ctx.textAlign = 'left';
+        ctx.fillText(z.label, x + 8, y + 22);
+      });
+    }
+
     // 描画
     function draw() {
       ctx.clearRect(0, 0, MAP_W, MAP_H);
       if (mapImg.complete) ctx.drawImage(mapImg, 0, 0, MAP_W, MAP_H);
+      drawZones();
 
       markers.forEach(m => {
         const isSelected = m.id === selectedId;
+        const isZone = m.group === 'zone_land' || m.group === 'zone_sea';
         const r = isSelected ? 16 : 10;
         const alpha = isSelected ? 1 : 0.7;
 
         ctx.globalAlpha = alpha;
-        ctx.beginPath();
-        ctx.arc(m.x, m.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = m.color;
-        ctx.fill();
-        ctx.lineWidth = isSelected ? 3 : 1.5;
-        ctx.strokeStyle = '#fff';
-        ctx.stroke();
+        if (isZone) {
+          // ゾーンコーナーは四角形で表示
+          const s = isSelected ? 14 : 9;
+          ctx.fillStyle = m.color;
+          ctx.fillRect(m.x - s, m.y - s, s * 2, s * 2);
+          ctx.lineWidth = isSelected ? 3 : 1.5;
+          ctx.strokeStyle = '#fff';
+          ctx.strokeRect(m.x - s, m.y - s, s * 2, s * 2);
+        } else {
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, r, 0, Math.PI * 2);
+          ctx.fillStyle = m.color;
+          ctx.fill();
+          ctx.lineWidth = isSelected ? 3 : 1.5;
+          ctx.strokeStyle = '#fff';
+          ctx.stroke();
+        }
 
         // ラベル（選択中 or ホバー範囲のみ）
         if (isSelected) {
