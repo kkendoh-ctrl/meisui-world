@@ -247,26 +247,97 @@ h<!DOCTYPE html>
         // Simple Interaction Event (for 4 other events)
         // ============================================
         function showSimpleInteractionEvent(char1, char2, event) {
-            const centerX = (char1.x + char2.x) / 2;
-            const centerY = (char1.y + char2.y) / 2;
-            const titleBarH = window.innerWidth <= 768 ? 36 : 50;
-            const screenX = centerX * camera.zoomX;
-            const screenY = centerY * camera.zoomY + 36;
+            // イベント別テーマカラー
+            const themes = {
+                'じゃんけん大会': { bg: 'linear-gradient(135deg,#667eea,#764ba2)', glow: '#a855f7', deco: '⚡' },
+                'ハイタッチ':     { bg: 'linear-gradient(135deg,#f7971e,#ffd200)', glow: '#fbbf24', deco: '🌟' },
+                '浦安盆踊り':     { bg: 'linear-gradient(135deg,#f953c6,#b91d73)', glow: '#ec4899', deco: '🌸' },
+                '記念撮影':       { bg: 'linear-gradient(135deg,#11998e,#38ef7d)', glow: '#34d399', deco: '✨' },
+            };
+            const theme = themes[event.name] || { bg: 'linear-gradient(135deg,#f7971e,#ffd200)', glow: '#ffd200', deco: '🎉' };
 
             const overlay = document.createElement('div');
-            overlay.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:300;';
+            overlay.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:300;display:flex;align-items:center;justify-content:center;';
 
-            const text = document.createElement('div');
-            text.style.cssText = `position:absolute;left:${screenX-80}px;top:${Math.max(20,screenY-80)}px;width:160px;text-align:center;font-size:20px;font-weight:bold;color:#333;background:rgba(255,255,255,0.95);border-radius:12px;padding:10px;box-shadow:0 4px 15px rgba(0,0,0,0.2);animation:popScale 0.3s ease;font-family:sans-serif;`;
-            text.innerHTML = `<div style="font-size:28px;">${event.emoji}</div><div>${event.name}</div><div style="font-size:11px;color:#888;margin-top:4px;">${char1.name} × ${char2.name}</div>`;
-            overlay.appendChild(text);
+            // メインカード（画面中央）
+            const card = document.createElement('div');
+            card.style.cssText = `
+                position:relative;
+                width:260px;
+                text-align:center;
+                background:${theme.bg};
+                border-radius:24px;
+                padding:28px 20px 22px;
+                box-shadow:0 0 0 4px rgba(255,255,255,0.4), 0 0 40px ${theme.glow}, 0 8px 32px rgba(0,0,0,0.4);
+                animation:popScale 0.35s cubic-bezier(0.34,1.56,0.64,1);
+                font-family:sans-serif;
+            `;
+
+            // デコ飾り（四隅）
+            const corners = ['top:8px;left:12px', 'top:8px;right:12px', 'bottom:8px;left:12px', 'bottom:8px;right:12px'];
+            corners.forEach(pos => {
+                const d = document.createElement('span');
+                d.style.cssText = `position:absolute;${pos};font-size:18px;opacity:0.85;`;
+                d.textContent = theme.deco;
+                card.appendChild(d);
+            });
+
+            // 絵文字（大）
+            const emojiEl = document.createElement('div');
+            emojiEl.style.cssText = 'font-size:64px;line-height:1.1;margin-bottom:8px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.3));';
+            emojiEl.textContent = event.emoji;
+            card.appendChild(emojiEl);
+
+            // イベント名
+            const nameEl = document.createElement('div');
+            nameEl.style.cssText = 'font-size:26px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.4);letter-spacing:2px;margin-bottom:10px;';
+            nameEl.textContent = event.name;
+            card.appendChild(nameEl);
+
+            // キャラ名
+            const charsEl = document.createElement('div');
+            charsEl.style.cssText = 'font-size:13px;color:rgba(255,255,255,0.85);background:rgba(0,0,0,0.2);border-radius:20px;padding:4px 14px;display:inline-block;';
+            charsEl.textContent = `${char1.name} × ${char2.name}`;
+            card.appendChild(charsEl);
+
+            overlay.appendChild(card);
+
+            // 紙吹雪パーティクル
+            const confettiColors = ['#ff1744','#ffd600','#ff6d00','#ff4081','#ffab00','#00e5ff','#76ff03','#e040fb'];
+            const vw = window.innerWidth, vh = window.innerHeight;
+            for (let i = 0; i < 40; i++) {
+                const p = document.createElement('div');
+                const size = 6 + Math.random() * 8;
+                const startX = vw * 0.2 + Math.random() * vw * 0.6;
+                const startY = vh * 0.3 + Math.random() * vh * 0.2;
+                const tx = (Math.random() - 0.5) * 600;
+                const ty = (Math.random() - 1.0) * 400 - 100;
+                const rot = Math.random() * 720;
+                p.style.cssText = `
+                    position:absolute;
+                    width:${size}px;height:${size * (Math.random() > 0.5 ? 1 : 2.5)}px;
+                    background:${confettiColors[Math.floor(Math.random() * confettiColors.length)]};
+                    border-radius:${Math.random() > 0.5 ? '50%' : '2px'};
+                    left:${startX}px;top:${startY}px;
+                    opacity:1;
+                    transition:transform ${1.5 + Math.random()}s ease-out, opacity ${1 + Math.random()}s ease-out ${0.5 + Math.random()}s;
+                `;
+                overlay.appendChild(p);
+                // アニメーション開始
+                requestAnimationFrame(() => {
+                    p.style.transform = `translate(${tx}px,${ty}px) rotate(${rot}deg)`;
+                    p.style.opacity = '0';
+                });
+            }
+
             document.body.appendChild(overlay);
 
             setTimeout(() => {
-                overlay.style.transition = 'opacity 0.5s';
-                overlay.style.opacity = '0';
-                setTimeout(() => overlay.remove(), 500);
-            }, 2500);
+                card.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
+                card.style.transform = 'scale(0.85)';
+                card.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 400);
+            }, 2800);
         }
 
         // ============================================
