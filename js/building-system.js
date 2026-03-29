@@ -137,12 +137,14 @@ function showBuildingNotification(building) {
     playSound('unlock');
 
     const emojiIcon = building.emoji || '🏗️';
-    const charLine = building.charName ? `<div style="font-size:14px;color:#aaa;margin-top:4px;">${building.charName}の力で建設！</div>` : '';
+    const charLine = building.charName
+        ? `<div style="font-size:14px;color:#aaa;margin-top:4px;">${esc(building.charName)}の力で建設！</div>`
+        : '';
 
     const content = document.createElement('div');
     content.innerHTML = `
         <div style="font-size:24px;font-weight:bold;color:#fff;">
-            ${emojiIcon} ${building.name}が たった！
+            ${esc(emojiIcon)} ${esc(building.name)}が たった！
         </div>
         ${charLine}
     `;

@@ -2,6 +2,19 @@
 // イベントキュー、投票効果、年代イベント、埋め立て進化、ランダムイベント、レベルアップ
 
 // ============================================
+// HTML エスケープユーティリティ（全ファイル共通）
+// innerHTML にデータを埋め込む際に使用
+// ============================================
+function esc(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+}
+
+// ============================================
 // イベントキュー（投票後のイベントを順番に表示）
 // ============================================
 const eventQueue = [];
@@ -83,11 +96,11 @@ function showVoteEffect(charType) {
 
     const content = document.createElement('div');
     content.innerHTML = `
-        <div style="font-size:48px;margin-bottom:8px;">${effect.icon}</div>
-        <div style="font-size:22px;font-weight:bold;margin-bottom:8px;">${effect.desc}</div>
-        <div style="font-size:16px;color:#ccc;margin-bottom:4px;">いま：${currentLevelName}</div>
-        <div style="font-size:20px;letter-spacing:2px;margin:8px 0;color:${meta.color};">${progressBar}</div>
-        <div style="font-size:14px;color:#aaa;">${nextMsg}</div>
+        <div style="font-size:48px;margin-bottom:8px;">${esc(effect.icon)}</div>
+        <div style="font-size:22px;font-weight:bold;margin-bottom:8px;">${esc(effect.desc)}</div>
+        <div style="font-size:16px;color:#ccc;margin-bottom:4px;">いま：${esc(currentLevelName)}</div>
+        <div style="font-size:20px;letter-spacing:2px;margin:8px 0;color:${esc(meta.color)};">${esc(progressBar)}</div>
+        <div style="font-size:14px;color:#aaa;">${esc(nextMsg)}</div>
     `;
 
     playSound('event');
@@ -121,9 +134,9 @@ function showEraEvent(year) {
 
     const content = document.createElement('div');
     content.innerHTML = `
-        <div style="font-size:56px;margin-bottom:8px;">${event.emoji}</div>
-        <div style="font-size:16px;color:${yearColor};margin-bottom:4px;">${year}年</div>
-        <div style="font-size:24px;font-weight:bold;">${event.text}</div>
+        <div style="font-size:56px;margin-bottom:8px;">${esc(event.emoji)}</div>
+        <div style="font-size:16px;color:${esc(yearColor)};margin-bottom:4px;">${esc(year)}年</div>
+        <div style="font-size:24px;font-weight:bold;">${esc(event.text)}</div>
     `;
 
     // 黒水イベント時は特殊エフェクトも同時発動
@@ -261,8 +274,8 @@ function showReclamationEvolution(stageInfo) {
         `;
         popup.innerHTML = `
             <div style="font-size:48px;margin-bottom:10px;">🏗️</div>
-            <div style="font-size:28px;font-weight:bold;margin-bottom:8px;">埋め立てで「${stageInfo.name}」ができた！</div>
-            <div style="font-size:16px;color:#90caf9;">${stageInfo.areas}</div>
+            <div style="font-size:28px;font-weight:bold;margin-bottom:8px;">埋め立てで「${esc(stageInfo.name)}」ができた！</div>
+            <div style="font-size:16px;color:#90caf9;">${esc(stageInfo.areas)}</div>
         `;
         document.body.appendChild(popup);
 
@@ -401,8 +414,8 @@ function showEventPopup(event) {
 
     const content = document.createElement('div');
     content.innerHTML = `
-        <div style="font-size:48px;margin-bottom:8px;">${emojiIcon}</div>
-        <div style="font-size:24px;font-weight:bold;color:#f57f17;">${eventText}</div>
+        <div style="font-size:48px;margin-bottom:8px;">${esc(emojiIcon)}</div>
+        <div style="font-size:24px;font-weight:bold;color:#f57f17;">${esc(eventText)}</div>
     `;
 
     pm.show('card', content, { duration: 4000, onDone: onEventDone });
@@ -428,12 +441,12 @@ function showLevelUpAnimation(newLevel) {
     const content = document.createElement('div');
     content.style.cssText = 'text-align:center;';
     content.innerHTML = `
-        <div style="font-size:100px;margin-bottom:16px;">${newLevel.emoji}</div>
+        <div style="font-size:100px;margin-bottom:16px;">${esc(newLevel.emoji)}</div>
         <div style="font-size:20px;color:#ffd700;margin-bottom:8px;">🎉 浦安が…</div>
         <div style="font-size:56px;font-weight:900;color:#fff;
             text-shadow:0 0 30px rgba(255,215,0,0.8),0 0 60px rgba(255,215,0,0.4);
             margin-bottom:16px;">
-            ${newLevel.title}
+            ${esc(newLevel.title)}
         </div>
         <div style="font-size:28px;color:#ffd700;">になった！</div>
     `;

@@ -4509,11 +4509,11 @@ h<!DOCTYPE html>
                 html += `
                 <div style="margin-bottom:6px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-                        <span style="font-weight:bold;font-size:13px;">${medal} ${meta.name}</span>
-                        <span style="font-size:13px;color:#555;">${count}票</span>
+                        <span style="font-weight:bold;font-size:13px;">${esc(medal)} ${esc(meta.name)}</span>
+                        <span style="font-size:13px;color:#555;">${esc(count)}票</span>
                     </div>
                     <div style="background:#e0e0e0;border-radius:4px;height:8px;overflow:hidden;">
-                        <div style="background:${meta.color};height:100%;width:${pct}%;transition:width 0.4s ease;border-radius:4px;"></div>
+                        <div style="background:${esc(meta.color)};height:100%;width:${pct}%;transition:width 0.4s ease;border-radius:4px;"></div>
                     </div>
                 </div>`;
             });
