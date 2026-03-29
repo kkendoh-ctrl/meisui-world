@@ -3298,19 +3298,45 @@ h<!DOCTYPE html>
 
             // For future years (after 2026), draw easter egg elements on top of map
             if (currentYear >= 2049) {
-                // Draw bridge to Kasai
+                // 浦葛大橋（橋本体）
+                // 橋の幅をstart/endの両端から上下に広げて描画
+                const bsx = fixedPos.kasai_bridge_start.x, bsy = fixedPos.kasai_bridge_start.y;
+                const bex = fixedPos.kasai_bridge_end.x,   bey = fixedPos.kasai_bridge_end.y;
+                // 橋の法線方向（垂直方向）を計算
+                const bdx = bex - bsx, bdy = bey - bsy;
+                const blen = Math.hypot(bdx, bdy);
+                const bnx = -bdy / blen, bny = bdx / blen; // 法線
+                const halfW = 18; // 橋の半幅（px）
+                // 橋の塗り（道路部分）
+                ctx.beginPath();
+                ctx.moveTo(bsx + bnx * halfW, bsy + bny * halfW);
+                ctx.lineTo(bex + bnx * halfW, bey + bny * halfW);
+                ctx.lineTo(bex - bnx * halfW, bey - bny * halfW);
+                ctx.lineTo(bsx - bnx * halfW, bsy - bny * halfW);
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(230, 81, 0, 0.35)';
+                ctx.fill();
+                // 橋の輪郭線（両端）
                 ctx.strokeStyle = '#E65100';
                 ctx.lineWidth = 4;
                 ctx.setLineDash([10, 5]);
                 ctx.beginPath();
-                ctx.moveTo(fixedPos.kasai_bridge_start.x, fixedPos.kasai_bridge_start.y);
-                ctx.lineTo(fixedPos.kasai_bridge_end.x, fixedPos.kasai_bridge_end.y);
+                ctx.moveTo(bsx + bnx * halfW, bsy + bny * halfW);
+                ctx.lineTo(bex + bnx * halfW, bey + bny * halfW);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(bsx - bnx * halfW, bsy - bny * halfW);
+                ctx.lineTo(bex - bnx * halfW, bey - bny * halfW);
                 ctx.stroke();
                 ctx.setLineDash([]);
-                ctx.font = 'bold 12px sans-serif';
+                // 橋名ラベル
+                ctx.font = 'bold 18px sans-serif';
                 ctx.fillStyle = '#E65100';
+                ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+                ctx.lineWidth = 4;
                 ctx.textAlign = 'center';
-                ctx.fillText('葛西大橋', fixedPos.kasai_bridge.x, fixedPos.kasai_bridge.y);
+                ctx.strokeText('浦葛大橋', fixedPos.kasai_bridge.x, fixedPos.kasai_bridge.y - 6);
+                ctx.fillText('浦葛大橋', fixedPos.kasai_bridge.x, fixedPos.kasai_bridge.y - 6);
             }
             if (currentYear >= 2069) {
                 // Ropeway
