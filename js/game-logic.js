@@ -1,23 +1,35 @@
 // めいすいくん総選挙 - ゲームロジック
 // 年代計算、レベルシステム、ランクシステム、歴史イベント定義
 
-// ========== 年代システム (1889-2100, 3票=10年) ==========
-const VOTES_PER_ADVANCE = 3;   // 何票溜まったら10年進むか
-const VOTES_PER_CYCLE = VOTES_PER_ADVANCE * 22;  // 66票で1サイクル
+// ========== 年代システム (1889-2100, 3票=1ステップ) ==========
+// Step 0: 1889-1900, Step 1: 1901-1910, ..., Step 20: 2091-2100 → 全21ステップ
+const VOTES_PER_ADVANCE = 3;   // 何票溜まったら次のステップへ
+const TOTAL_STEPS = 21;        // 全21ステップ（0〜20）
+const VOTES_PER_CYCLE = VOTES_PER_ADVANCE * TOTAL_STEPS;  // 63票で1サイクル
 
 function getEffectiveVotes() {
     return Math.max(0, totalVotes - cycleStartVotes);
 }
 
-// 10年進むステップ数（0〜22）
+// ステップ数（0〜20+）
 function getYearSteps() {
     return Math.floor(getEffectiveVotes() / VOTES_PER_ADVANCE);
 }
 
+// 現在の年代の開始年を返す
 function getCurrentYear() {
     const steps = getYearSteps();
-    if (steps >= 22) return END_YEAR;
-    return START_YEAR + steps * YEARS_PER_VOTE;
+    if (steps >= TOTAL_STEPS) return END_YEAR;
+    if (steps === 0) return 1889;
+    return 1901 + (steps - 1) * 10;
+}
+
+// 現在の年代の終了年を返す
+function getCurrentYearEnd() {
+    const steps = getYearSteps();
+    if (steps >= TOTAL_STEPS) return END_YEAR;
+    if (steps === 0) return 1900;
+    return 1910 + (steps - 1) * 10;
 }
 
 function getWorldLine() {
@@ -25,40 +37,58 @@ function getWorldLine() {
 }
 
 function isEndingTrigger() {
-    return getYearSteps() >= 22;
+    return getYearSteps() >= TOTAL_STEPS;
 }
 
-// 次の10年進行まであと何票か（0〜2）
+// 次のステップまであと何票か（0〜2）
 function getAdvanceCounter() {
     return getEffectiveVotes() % VOTES_PER_ADVANCE;
 }
 
 // ========== 歴史イベント定義 ==========
 const historicalEvents = {
-    // 実際の浦安の歴史
+    // Step 0: 1889-1900
     1889: {text: '浦安村 誕生 — 堀江・猫実・当代島の3村が合併', emoji: '🏘️'},
-    1899: {text: 'べか舟漁 最盛期 — 海苔とあさりで浦安は活気づく', emoji: '⛵'},
-    1909: {text: '浦安町に昇格', emoji: '🏛️'},
-    1919: {text: '大正6年の大津波の記憶… 高潮で浦安が水没した', emoji: '🌊'},
-    1929: {text: '浦安橋の建設がはじまる — 東京への道がひらける', emoji: '🌉'},
-    // 1939年イベント削除
-    1949: {text: 'キティ台風 襲来！ 堤防14か所が決壊、町の7割が浸水…', emoji: '🌀'},
-    1959: {text: '黒い水事件 — 工場排水で海が汚染された…', emoji: '🖤', special: 'blackWater'},
-    1969: {text: '地下鉄東西線 開通！ 浦安が東京とつながった', emoji: '🚇'},
-    1979: {text: '埋め立てで浦安の面積が4倍に！ 舞浜・日の出・明海が誕生', emoji: '🏗️'},
-    1989: {text: 'JR京葉線 開通！ 新浦安駅・舞浜駅ができた', emoji: '🚃'},
-    1999: {text: '浦安市の人口が15万人を突破！ 住みたい街ランキング上位に', emoji: '🏙️'},
-    2009: {text: '東京ディズニーリゾート 来園者数3億人突破！', emoji: '🏰'},
-    2019: {text: '浦安三社祭 4年に一度の大祭！ まいだ！まいだ！', emoji: '🏮'},
-    // 未来の浦安
-    2029: {text: '三番瀬 自然再生プロジェクト 開始！', emoji: '🦅'},
-    2039: {text: '浦安スマートシティ計画 — 自動運転バスが走り出す', emoji: '🚌'},
-    2049: {text: '葛西に橋が架かった！ 東京湾岸エリアが一体化', emoji: '🌉'},
-    2059: {text: '浦安 海上ソーラー発電 稼働！ エネルギー自給率100%', emoji: '☀️'},
-    2069: {text: '浦安↔新浦安 ロープウェイ開通！', emoji: '🚡'},
-    2079: {text: '海底トンネルで千葉と神奈川が直結！', emoji: '🚇'},
-    2089: {text: '海上都市計画 始動！ 東京湾に浮かぶ街', emoji: '🏙️'},
-    2099: {text: '未来都市うらやす 完成間近！', emoji: '🌟'},
+    // Step 1: 1901-1910
+    1901: {text: 'べか舟漁 最盛期 — 海苔とあさりで浦安は活気づく', emoji: '⛵'},
+    // Step 2: 1911-1920
+    1911: {text: '浦安町に昇格', emoji: '🏛️'},
+    // Step 2: 1921-1930
+    1921: {text: '大正6年の大津波の記憶… 高潮で浦安が水没した', emoji: '🌊'},
+    // Step 3: 1931-1940
+    1931: {text: '浦安橋の建設がはじまる — 東京への道がひらける', emoji: '🌉'},
+    // Step 4: 1941-1950
+    1941: {text: 'キティ台風 襲来！ 堤防14か所が決壊、町の7割が浸水…', emoji: '🌀'},
+    // Step 5: 1951-1960
+    1951: {text: '黒い水事件 — 工場排水で海が汚染された…', emoji: '🖤', special: 'blackWater'},
+    // Step 6: 1961-1970
+    1961: {text: '地下鉄東西線 開通！ 浦安が東京とつながった', emoji: '🚇'},
+    // Step 7: 1971-1980
+    1971: {text: '埋め立てで浦安の面積が4倍に！ 舞浜・日の出・明海が誕生', emoji: '🏗️'},
+    // Step 8: 1981-1990
+    1981: {text: 'JR京葉線 開通！ 新浦安駅・舞浜駅ができた', emoji: '🚃'},
+    // Step 9: 1991-2000
+    1991: {text: '浦安市の人口が15万人を突破！ 住みたい街ランキング上位に', emoji: '🏙️'},
+    // Step 10: 2001-2010
+    2001: {text: '東京ディズニーリゾート 来園者数3億人突破！', emoji: '🏰'},
+    // Step 11: 2011-2020
+    2011: {text: '浦安三社祭 4年に一度の大祭！ まいだ！まいだ！', emoji: '🏮'},
+    // Step 12: 2021-2030
+    2021: {text: '三番瀬 自然再生プロジェクト 開始！', emoji: '🦅'},
+    // Step 13: 2031-2040
+    2031: {text: '浦安スマートシティ計画 — 自動運転バスが走り出す', emoji: '🚌'},
+    // Step 14: 2041-2050
+    2041: {text: '葛西に橋が架かった！ 東京湾岸エリアが一体化', emoji: '🌉'},
+    // Step 15: 2051-2060
+    2051: {text: '浦安 海上ソーラー発電 稼働！ エネルギー自給率100%', emoji: '☀️'},
+    // Step 16: 2061-2070
+    2061: {text: '浦安↔新浦安 ロープウェイ開通！', emoji: '🚡'},
+    // Step 17: 2071-2080
+    2071: {text: '海底トンネルで千葉と神奈川が直結！', emoji: '🚇'},
+    // Step 18: 2081-2090
+    2081: {text: '海上都市計画 始動！ 東京湾に浮かぶ街', emoji: '🏙️'},
+    // Step 19: 2091-2100
+    2091: {text: '未来都市うらやす 完成間近！', emoji: '🌟'},
 };
 
 // ========== ランクシステム ==========
@@ -67,9 +97,9 @@ const rankLevels = [
     { min: 6, rank: 'E', title: 'ちいさな集落', color: '#88aacc', star: '⭐', desc: '少しずつ人が集まり始めた' },
     { min: 15, rank: 'D', title: 'のどかな町', color: '#66bb6a', star: '⭐⭐', desc: '町に活気が出てきた！' },
     { min: 27, rank: 'C', title: '発展する港町', color: '#42a5f5', star: '⭐⭐⭐', desc: '商業と観光が盛り上がってきた！' },
-    { min: 42, rank: 'B', title: 'にぎわう観光都市', color: '#ffa726', star: '⭐⭐⭐⭐', desc: '浦安は観光名所に！' },
-    { min: 54, rank: 'A', title: '輝く海辺の楽園', color: '#ef5350', star: '⭐⭐⭐⭐⭐', desc: '自然と商業が調和する理想の街！' },
-    { min: 66, rank: 'S', title: '伝説のめいすいくんワールド', color: '#e040fb', star: '🌟🌟🌟🌟🌟', desc: '全てが揃った究極の浦安！' },
+    { min: 39, rank: 'B', title: 'にぎわう観光都市', color: '#ffa726', star: '⭐⭐⭐⭐', desc: '浦安は観光名所に！' },
+    { min: 52, rank: 'A', title: '輝く海辺の楽園', color: '#ef5350', star: '⭐⭐⭐⭐⭐', desc: '自然と商業が調和する理想の街！' },
+    { min: 63, rank: 'S', title: '伝説のめいすいくんワールド', color: '#e040fb', star: '🌟🌟🌟🌟🌟', desc: '全てが揃った究極の浦安！' },
 ];
 
 function getOverallRank() {
@@ -95,7 +125,7 @@ const levelThresholds = [
     { min: 15, max: 29, title: "ちいさなむら", emoji: "🏘️" },
     { min: 30, max: 44, title: "にぎやかなまち", emoji: "🏙️" },
     { min: 45, max: 59, title: "すてきなみやこ", emoji: "👑" },
-    { min: 60, max: 66, title: "ゆめのまち", emoji: "✨" },
+    { min: 57, max: 63, title: "ゆめのまち", emoji: "✨" },
 ];
 
 function getCurrentLevel() {

@@ -32,7 +32,7 @@ h<!DOCTYPE html>
     <div id="ambientOverlay"></div>
 
     <div class="title-bar">
-        🗳️ 浦安めいすいくん総選挙～明るい選挙がみらいを変える～ <img id="titleMeisuiImg" style="height:34px;vertical-align:middle;margin-left:4px;" alt="めいすいくん">
+        🗳️ 浦安めいすいくん総選挙～明るい選挙がみらいを変える～ <img id="titleMeisuiImg" style="height:39px;vertical-align:middle;margin-left:4px;" alt="めいすいくん">
     </div>
 
     <!-- Year Display — 非表示（タイムラインバーに統合） -->
@@ -60,7 +60,7 @@ h<!DOCTYPE html>
     </div>
 
     <!-- 左サイドパネル：iPhone フレーム -->
-    <div id="leftPanel" style="position:fixed;top:72px;left:0;bottom:34px;z-index:200;width:318px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;padding:4px 5px 4px 0;transition:transform 0.5s cubic-bezier(0.4,0,0.2,1);">
+    <div id="leftPanel" style="position:fixed;top:40px;left:0;bottom:34px;z-index:200;width:318px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;padding:4px 5px 4px 0;transition:transform 0.5s cubic-bezier(0.4,0,0.2,1);">
 
       <!-- ── iPhone フレーム本体 ── -->
       <div id="phoneFrame" style="position:relative;width:308px;height:599px;background:#1c1c1e;border-radius:46px;flex-shrink:0;box-shadow:0 0 0 1.5px #48484a,0 0 0 3.5px #2c2c2e,inset 0 0 0 1px rgba(255,255,255,0.07),0 28px 56px rgba(0,0,0,0.9),0 6px 18px rgba(0,0,0,0.5);">
@@ -3723,14 +3723,14 @@ h<!DOCTYPE html>
                 ctx.drawImage(mapImage, 0, 0, MAP_W, MAP_H);
             }
             // Sea overlay images for reclamation stages
-            if (currentYear < 1969 && seaStage1.complete) {
+            if (currentYear < 1961 && seaStage1.complete) {
                 ctx.drawImage(seaStage1, 0, 0, MAP_W, MAP_H);
-            } else if (currentYear < 1979 && seaStage2.complete) {
+            } else if (currentYear < 1971 && seaStage2.complete) {
                 ctx.drawImage(seaStage2, 0, 0, MAP_W, MAP_H);
-            } else if (currentYear < 1989 && seaStage3.complete) {
+            } else if (currentYear < 1981 && seaStage3.complete) {
                 ctx.drawImage(seaStage3, 0, 0, MAP_W, MAP_H);
             }
-            // 1989年以降: オーバーレイなし（フルマップ表示）
+            // 1981年以降: オーバーレイなし（フルマップ表示）
 
             // For future years (after 2026), draw easter egg elements on top of map
             if (currentYear >= 2049) {
@@ -4202,7 +4202,14 @@ h<!DOCTYPE html>
 
             if (filled) filled.style.width = pct + '%';
             if (marker) marker.style.left = pct + '%';
-            if (yearEl) yearEl.textContent = year + '年';
+            const yearEnd = getCurrentYearEnd();
+            if (yearEl) {
+                if (year >= END_YEAR) {
+                    yearEl.textContent = END_YEAR + '年';
+                } else {
+                    yearEl.textContent = year + '-' + yearEnd + '年';
+                }
+            }
 
             // この年代の出来事をマーキー表示
             if (nextEl) {
@@ -4334,7 +4341,8 @@ h<!DOCTYPE html>
                 ? (steps - _MAX_ERA_CATCHUP + 1)
                 : from;
             for (let s = effectiveFrom; s <= steps; s++) {
-                const yr = START_YEAR + s * YEARS_PER_VOTE;
+                // ステップ→年代開始年マッピング（getCurrentYearと同じロジック）
+                const yr = (s === 0) ? 1889 : 1901 + (s - 1) * 10;
                 if (historicalEvents[yr]) {
                     // 即座に表示（キューに積まない）
                     showEraEvent(yr);

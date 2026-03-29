@@ -209,16 +209,16 @@ function showBlackWaterEffect() {
 // 埋め立て進化エフェクト（ポケモン進化風）
 // ============================================
 const reclamationStages = {
-    1969: { name: '中町エリア', areas: '東野・富岡・今川・海楽・美浜・入船' },
-    1979: { name: '舞浜・新町エリア', areas: '舞浜・日の出・明海・港・千鳥' },
-    1989: { name: '全域', areas: '埋め立てで今と同じ大きさになった' },
+    1961: { name: '中町エリア', areas: '東野・富岡・今川・海楽・美浜・入船' },
+    1971: { name: '舞浜・新町エリア', areas: '舞浜・日の出・明海・港・千鳥' },
+    1981: { name: '全域', areas: '埋め立てで今と同じ大きさになった' },
 };
 let lastReclamationStage = 0;
 
 function getReclamationStage(year) {
-    if (year >= 1989) return 1989;
-    if (year >= 1979) return 1979;
-    if (year >= 1969) return 1969;
+    if (year >= 1981) return 1981;
+    if (year >= 1971) return 1971;
+    if (year >= 1961) return 1961;
     return 0;
 }
 

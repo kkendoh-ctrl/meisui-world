@@ -111,9 +111,9 @@ let currentBgmKey = null;
 let bgmEnabled = true;
 
 function getBgmKeyForYear(year) {
-    if (year <= 1959) return 'village';
-    if (year <= 1989) return 'growth';
-    if (year <= 2050) return 'modern';
+    if (year <= 1951) return 'village';
+    if (year <= 1981) return 'growth';
+    if (year <= 2041) return 'modern';
     return 'future';  // 2051年以降
 }
 
