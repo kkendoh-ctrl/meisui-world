@@ -1508,6 +1508,8 @@ h<!DOCTYPE html>
             kasai_bridge_start:  { x: 910,  y: 351  },
             kasai_bridge_end:    { x: 837,  y: 326  },
             ropeway_label:       { x: 1051, y: 315  },
+            ropeway_start:       { x: 608,  y: 132  },
+            ropeway_end:         { x: 935,  y: 364  },
             marine_city:         { x: 938,  y: 988  },
         };
 
@@ -3419,18 +3421,35 @@ h<!DOCTYPE html>
                 ctx.fillText('浦葛大橋', fixedPos.kasai_bridge.x, fixedPos.kasai_bridge.y - 6);
             }
             if (currentYear >= 2069) {
-                // Ropeway
+                // ロープウェイ（始点・終点は fixedPos で管理）
+                const rsx = fixedPos.ropeway_start.x, rsy = fixedPos.ropeway_start.y;
+                const rex = fixedPos.ropeway_end.x,   rey = fixedPos.ropeway_end.y;
+                // ケーブル本線
                 ctx.strokeStyle = '#9C27B0';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([5, 5]);
                 ctx.beginPath();
-                ctx.moveTo(608, 132); // 浦安駅
-                ctx.lineTo(935, 364); // 新浦安駅
+                ctx.moveTo(rsx, rsy);
+                ctx.lineTo(rex, rey);
                 ctx.stroke();
                 ctx.setLineDash([]);
+                // 支柱マーク（始点・終点）
+                [{ x: rsx, y: rsy }, { x: rex, y: rey }].forEach(p => {
+                    ctx.fillStyle = '#9C27B0';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                });
+                // ラベル
                 ctx.fillStyle = '#9C27B0';
-                ctx.font = 'bold 12px sans-serif';
+                ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+                ctx.lineWidth = 3;
+                ctx.font = 'bold 14px sans-serif';
                 ctx.textAlign = 'center';
+                ctx.strokeText('ロープウェイ', fixedPos.ropeway_label.x, fixedPos.ropeway_label.y);
                 ctx.fillText('ロープウェイ', fixedPos.ropeway_label.x, fixedPos.ropeway_label.y);
             }
             if (currentYear >= 2089) {
