@@ -3269,10 +3269,9 @@ h<!DOCTYPE html>
                         // 海キャラはパネル左端まで移動可、陸キャラはパネル右側に制限
                         const terrain = charTerrain[char.type];
                         const minX = (terrain === 'sea') ? 350 : 620;
-                        // y上限: 海キャラはMAP_H-5（海ゾーン下端のウェイポイントに届くよう余裕を持たせる）
-                        const maxY = (terrain === 'sea') ? MAP_H - 5 : MAP_H - 50;
+                        // y上限: 全キャラMAP_H-5（陸・海どちらのゾーンも下端がy=1067まであるため余裕を持たせる）
                         char.x = Math.max(minX, Math.min(MAP_W - 50, char.x));
-                        char.y = Math.max(80, Math.min(maxY, char.y));
+                        char.y = Math.max(80, Math.min(MAP_H - 5, char.y));
                     }
                 }
             });
