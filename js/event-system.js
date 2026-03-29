@@ -12,7 +12,17 @@ function queueEvent(showFn) {
 }
 
 function playEventQueue() {
-    if (eventQueuePlaying || eventQueue.length === 0) return;
+    if (eventQueuePlaying) return;
+    if (eventQueue.length === 0) {
+        // キューが空でも voteInProgress を確実にリセット
+        window.voteInProgress = false;
+        const voteBtn = document.getElementById('voteBtn');
+        if (voteBtn) {
+            voteBtn.style.opacity = '1';
+            voteBtn.style.pointerEvents = 'auto';
+        }
+        return;
+    }
     eventQueuePlaying = true;
     playNextEvent();
 }

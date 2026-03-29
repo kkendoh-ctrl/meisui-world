@@ -3324,6 +3324,7 @@ h<!DOCTYPE html>
 
         // Animation loop
         let lastTime = Date.now();
+        let animFrameId = null;
         function animate() {
           try {
             const now = Date.now();
@@ -3560,7 +3561,7 @@ h<!DOCTYPE html>
           } catch (e) {
             console.error('描画エラー:', e);
           }
-          requestAnimationFrame(animate);
+          animFrameId = requestAnimationFrame(animate);
         }
 
         // Input handling
@@ -3938,6 +3939,18 @@ h<!DOCTYPE html>
 
             playSound('vote');
             window.voteInProgress = true;
+            // 安全タイムアウト: 20秒でフラグ強制リセット
+            clearTimeout(window._voteProgressTimeout);
+            window._voteProgressTimeout = setTimeout(() => {
+                if (window.voteInProgress) {
+                    console.warn('⚠️ voteInProgress 20秒タイムアウト（外部投票）→ 強制リセット');
+                    eventQueue.length = 0;
+                    eventQueuePlaying = false;
+                    window.voteInProgress = false;
+                    const voteBtn = document.getElementById('voteBtn');
+                    if (voteBtn) { voteBtn.style.opacity = '1'; voteBtn.style.pointerEvents = 'auto'; }
+                }
+            }, 20000);
 
             // ①カットイン 2.5秒
             showCutinAnimation(charType);
@@ -4004,6 +4017,18 @@ h<!DOCTYPE html>
             }
 
             window.voteInProgress = true;
+            // 安全タイムアウト: 20秒経ってもフラグが残っていたら強制リセット
+            clearTimeout(window._voteProgressTimeout);
+            window._voteProgressTimeout = setTimeout(() => {
+                if (window.voteInProgress) {
+                    console.warn('⚠️ voteInProgress 20秒タイムアウト → 強制リセット');
+                    eventQueue.length = 0;
+                    eventQueuePlaying = false;
+                    window.voteInProgress = false;
+                    const voteBtn = document.getElementById('voteBtn');
+                    if (voteBtn) { voteBtn.style.opacity = '1'; voteBtn.style.pointerEvents = 'auto'; }
+                }
+            }, 20000);
 
             // ボタン無効化
             document.getElementById('voteBtn').style.opacity = '0.5';
@@ -4019,6 +4044,9 @@ h<!DOCTYPE html>
                 firebaseDb.ref('stats/totalVoteCount').transaction(current => (current || 0) + 1);
             }).catch(error => {
                 console.error('Vote transaction failed:', error);
+                // キューに積んだイベントも全て破棄してクリーンな状態に戻す
+                eventQueue.length = 0;
+                eventQueuePlaying = false;
                 window.voteInProgress = false;
                 document.getElementById('voteBtn').style.opacity = '1';
                 document.getElementById('voteBtn').style.pointerEvents = 'auto';
@@ -4271,6 +4299,16 @@ h<!DOCTYPE html>
                 localStorage.setItem('meisui_builtBuildings', '[]');
                 saveBuildingsToFirebase();
                 endingActive = false;
+
+                // 世界線遷移後の最初の lastVoteChar 変化を「初回」として扱う
+                // （遷移直前の古い値で演出が発火するのを防ぐ）
+                remoteVoteInitialLoad = true;
+
+                // イベントキューとフラグもリセット
+                eventQueue.length = 0;
+                eventQueuePlaying = false;
+                window.voteInProgress = false;
+
                 playSound('vote');
             };
             document.body.appendChild(btn);
@@ -4837,7 +4875,20 @@ h<!DOCTYPE html>
         }, { once: true });
         document.getElementById('soundToggleBtn').addEventListener('click', toggleSound);
         fitMapToScreen();
-        animate();
+        // 多重起動防止: まだ動いていない場合のみ起動
+        if (!animFrameId) {
+            animate();
+        }
+        // タブ非表示時にRAFを止めてバッテリー節約（iPadに有効）
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                cancelAnimationFrame(animFrameId);
+                animFrameId = null;
+            } else if (!animFrameId) {
+                lastTime = Date.now(); // 復帰時に時間をリセットして描画ずれ防止
+                animate();
+            }
+        });
 
         // ============================================
         // クイズシステム（V3新機能）
