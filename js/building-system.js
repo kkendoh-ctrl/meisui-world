@@ -90,7 +90,7 @@ function saveBuildingsToFirebase() {
     });
 }
 
-function checkBuildingUnlock(prevVotes) {
+function checkBuildingUnlock() {
     const effective = getEffectiveVotes();
     let newUnlock = false;
 

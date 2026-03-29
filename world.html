@@ -3112,9 +3112,13 @@ h<!DOCTYPE html>
         }
 
         function drawParticles() {
-            // Hard limit on particles to prevent memory issues
+            // 上限200件を超えたら古いものの life を加速させてフェードアウト
+            // （突然消えるのを防ぐ）
             if (particles.length > 200) {
-                particles = particles.slice(-200);
+                const excess = particles.length - 200;
+                for (let i = 0; i < excess; i++) {
+                    particles[i].life = Math.min(particles[i].life || 0, 10);
+                }
             }
 
             particles = particles.filter(p => {
@@ -3975,7 +3979,7 @@ h<!DOCTYPE html>
                         queueEvent(() => { showLevelUpAnimation(newLevel); playSound('levelup'); });
                     }
                     // 建物アンロック
-                    checkBuildingUnlock(prevVotes);
+                    checkBuildingUnlock();
                     // イベントトリガー
                     checkEventTrigger();
                     // エンディングトリガー（2100年到達）
@@ -4107,7 +4111,7 @@ h<!DOCTYPE html>
                     }
 
                     // 建物アンロック
-                    checkBuildingUnlock(prevVotes);
+                    checkBuildingUnlock();
 
                     // イベントトリガー
                     checkEventTrigger();
