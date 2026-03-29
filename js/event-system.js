@@ -139,8 +139,12 @@ function showEraEvent(year) {
     });
 }
 
-// 黒水エフェクト
+// 黒水エフェクト（重複発動防止フラグ）
+let _blackWaterActive = false;
 function showBlackWaterEffect() {
+    // 既に発動中の場合はスキップ（2重intervalを防ぐ）
+    if (_blackWaterActive) return;
+    _blackWaterActive = true;
     const blackSea = document.createElement('div');
     blackSea.style.cssText = `
         position:fixed;top:0;left:0;width:100%;height:100%;z-index:300;
@@ -166,6 +170,7 @@ function showBlackWaterEffect() {
 
     setTimeout(() => {
         clearInterval(particleInterval);
+        _blackWaterActive = false;
         blackSea.style.opacity = '0';
         setTimeout(() => blackSea.remove(), 1500);
     }, 6000);

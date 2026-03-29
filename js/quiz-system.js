@@ -16,19 +16,25 @@ fetch('quizzes.json')
 let usedQuizIndices = [];
 
 function getRandomQuiz() {
+    // まだ読み込み中のときは null を返す（呼び出し側でチェック）
+    if (quizzes.length === 0) return null;
     if (usedQuizIndices.length >= quizzes.length) {
         usedQuizIndices = [];
     }
     let idx;
+    let attempts = 0;
     do {
         idx = Math.floor(Math.random() * quizzes.length);
-    } while (usedQuizIndices.includes(idx));
+        attempts++;
+    } while (usedQuizIndices.includes(idx) && attempts < quizzes.length * 2);
     usedQuizIndices.push(idx);
     return quizzes[idx];
 }
 
 function showQuizModal(charType) {
     const quiz = getRandomQuiz();
+    // クイズがまだ読み込まれていないかエラーの場合はスキップ
+    if (!quiz) { onEventDone(); return; }
     const shuffled = [...quiz.choices].sort(() => Math.random() - 0.5);
 
     // クイズデータをグローバルに保存（回答処理用）

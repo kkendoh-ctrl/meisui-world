@@ -156,12 +156,16 @@ function updateBgm() {
 
 // 自動再生ブロック対策: ユーザー操作で再試行
 let bgmPendingPlay = false;
-document.addEventListener('click', function bgmRetry() {
+// 自動再生ブロック対策: ユーザー操作で再試行
+// 成功後は自分自身を解除してメモリを節約
+function bgmRetry() {
     if (bgmPendingPlay && currentBgmKey) {
         bgmPendingPlay = false;
         const track = bgmTracks[currentBgmKey];
         track.volume = 0;
         track.play().then(() => {
+            // 再生成功 → このリスナーは不要になるので削除
+            document.removeEventListener('click', bgmRetry);
             const fadeIn = setInterval(() => {
                 if (track.volume < 0.25) {
                     track.volume = Math.min(0.3, track.volume + 0.05);
@@ -169,9 +173,13 @@ document.addEventListener('click', function bgmRetry() {
                     clearInterval(fadeIn);
                 }
             }, 100);
-        }).catch(() => {});
+        }).catch(() => {
+            // 再生失敗 → 次のクリックで再試行するためフラグを戻す
+            bgmPendingPlay = true;
+        });
     }
-});
+}
+document.addEventListener('click', bgmRetry);
 
 // サウンドトグル（BGMも連動）
 function toggleSound() {

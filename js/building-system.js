@@ -50,7 +50,16 @@ const charBuildingsList = [
 ];
 
 // 建設済み建物リスト（localStorageから復元）
-let builtBuildings = JSON.parse(localStorage.getItem('meisui_builtBuildings') || '[]');
+// try-catch: 保存データが破損していても確実に空配列で起動できるようにする
+let builtBuildings = [];
+try {
+    builtBuildings = JSON.parse(localStorage.getItem('meisui_builtBuildings') || '[]');
+    if (!Array.isArray(builtBuildings)) builtBuildings = [];
+} catch (e) {
+    console.warn('建物データの読み込み失敗（データリセット）:', e);
+    builtBuildings = [];
+    localStorage.removeItem('meisui_builtBuildings');
+}
 
 // Firebase同期: 建物アンロック状態を全端末で共有
 firebaseDb.ref('stats/builtBuildings').on('value', snap => {
