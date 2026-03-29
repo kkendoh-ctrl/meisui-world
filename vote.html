@@ -480,6 +480,7 @@
         db.ref('worldLineOffset').set(0);
         db.ref('stats/cycleStartVotes').set(0);
         db.ref('stats/decorationOffset').set(zeroVotes);
+        db.ref('stats/cycleStartPerChar').set(zeroVotes);
         alert('リセットしました');
       });
     }

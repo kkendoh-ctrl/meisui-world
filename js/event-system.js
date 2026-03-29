@@ -211,7 +211,7 @@ function showBlackWaterEffect() {
 const reclamationStages = {
     1969: { name: '中町エリア', areas: '東野・富岡・今川・海楽・美浜・入船' },
     1979: { name: '舞浜・新町エリア', areas: '舞浜・日の出・明海・港・千鳥' },
-    1989: { name: '全域', areas: '高洲 — 浦安の埋め立て完了！' },
+    1989: { name: '全域', areas: '埋め立てで今と同じ大きさになった' },
 };
 let lastReclamationStage = 0;
 

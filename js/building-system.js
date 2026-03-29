@@ -23,14 +23,14 @@ const buildingsList = [
 
 // ========== キャラ別建物（各キャラへの投票数で発動） ==========
 const charBuildingsList = [
-    // イチョウめいすいくん → 自然・緑化
-    { id: "ginkgo_park", name: "イチョウこうえん", char: "meisui", unlock_votes: 2, emoji: "🌳" },
-    { id: "botanical_garden", name: "しょくぶつえん", char: "meisui", unlock_votes: 5, emoji: "🌿" },
-    { id: "forest_school", name: "もりのがっこう", char: "meisui", unlock_votes: 8, emoji: "🏕️" },
-    // ツツジめいちゃん → 花・子育て
-    { id: "flower_road", name: "はなみち", char: "tsutsuji", unlock_votes: 2, emoji: "🌸" },
-    { id: "nursery", name: "ほいくえん", char: "tsutsuji", unlock_votes: 5, emoji: "👶" },
-    { id: "kids_plaza", name: "こどもひろば", char: "tsutsuji", unlock_votes: 8, emoji: "🎠" },
+    // イチョウめいすいくん → 公園（3つ揃うとモルック大会）
+    { id: "meisui_park1", name: "めいすいこうえん", char: "meisui", unlock_votes: 3, emoji: "🌳" },
+    { id: "meisui_park2", name: "イチョウひろば", char: "meisui", unlock_votes: 6, emoji: "🌿" },
+    { id: "meisui_park3", name: "もりのこうえん", char: "meisui", unlock_votes: 9, emoji: "🏕️" },
+    // ツツジめいちゃん → お花屋さん・お花畑
+    { id: "flower_shop", name: "おはなやさん", char: "tsutsuji", unlock_votes: 3, emoji: "💐" },
+    { id: "flower_field", name: "おはなばたけ", char: "tsutsuji", unlock_votes: 6, emoji: "🌸" },
+    { id: "flower_garden", name: "はなぞのガーデン", char: "tsutsuji", unlock_votes: 9, emoji: "🌺" },
     // ビーナスめいちゃん → 観光・リゾート
     { id: "beach_house", name: "うみのいえ", char: "meisui_chan", unlock_votes: 2, emoji: "🏖️" },
     { id: "hotel", name: "ホテル", char: "meisui_chan", unlock_votes: 5, emoji: "🏨" },
@@ -38,7 +38,7 @@ const charBuildingsList = [
     // 海めいすいくん → 海・環境
     { id: "fishing_pier", name: "つりばし", char: "bekabune", unlock_votes: 2, emoji: "🎣" },
     { id: "marine_center", name: "うみのセンター", char: "bekabune", unlock_votes: 5, emoji: "🐬" },
-    { id: "coral_reef", name: "サンゴしょく", char: "bekabune", unlock_votes: 8, emoji: "🪸" },
+    { id: "coral_reef", name: "サンゴしょう", char: "bekabune", unlock_votes: 8, emoji: "🪸" },
     // 屋形船めいすいくん → 伝統・文化
     { id: "shrine", name: "じんじゃ", char: "asari", unlock_votes: 2, emoji: "⛩️" },
     { id: "festival_hall", name: "おまつりかいかん", char: "asari", unlock_votes: 5, emoji: "🏮" },
@@ -81,7 +81,7 @@ function silentBuildingSync() {
         }
     });
     charBuildingsList.forEach(b => {
-        const cv = Math.max(0, (votes[b.char] || 0) - (decorationOffset[b.char] || 0));
+        const cv = Math.max(0, (votes[b.char] || 0) - (cycleStartPerChar[b.char] || 0));
         if (cv >= b.unlock_votes && !builtBuildings.includes(b.id)) {
             builtBuildings.push(b.id);
             changed = true;
@@ -114,7 +114,7 @@ function checkBuildingUnlock() {
 
     // キャラ別票数ベースの建物
     charBuildingsList.forEach(building => {
-        const charVotes = Math.max(0, (votes[building.char] || 0) - (decorationOffset[building.char] || 0));
+        const charVotes = Math.max(0, (votes[building.char] || 0) - (cycleStartPerChar[building.char] || 0));
         if (charVotes >= building.unlock_votes && !builtBuildings.includes(building.id)) {
             builtBuildings.push(building.id);
             newUnlock = true;
@@ -127,10 +127,33 @@ function checkBuildingUnlock() {
         }
     });
 
+    // モルック大会開催（meisui公園3つ完成時）
+    const meisuiParks = ['meisui_park1', 'meisui_park2', 'meisui_park3'];
+    if (meisuiParks.every(id => builtBuildings.includes(id)) && !builtBuildings.includes('molkky_event')) {
+        builtBuildings.push('molkky_event');
+        newUnlock = true;
+        queueEvent(() => showMolkkyEvent());
+    }
+
     if (newUnlock) {
         localStorage.setItem('meisui_builtBuildings', JSON.stringify(builtBuildings));
         saveBuildingsToFirebase();
     }
+}
+
+// モルック大会開催イベント
+function showMolkkyEvent() {
+    playSound('event');
+    const content = document.createElement('div');
+    content.innerHTML = `
+        <div style="font-size:28px;font-weight:900;color:#ffd700;text-shadow:0 0 15px rgba(255,215,0,0.8);">
+            🏆 モルック大会 開催！
+        </div>
+        <div style="font-size:16px;color:#fff;margin-top:8px;">
+            3つの公園が完成して<br>モルック大会ができるようになった！
+        </div>
+    `;
+    pm.show('toast', content, { duration: 5000, onDone: onEventDone });
 }
 
 function showBuildingNotification(building) {

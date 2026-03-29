@@ -1,17 +1,23 @@
 // めいすいくん総選挙 - ゲームロジック
 // 年代計算、レベルシステム、ランクシステム、歴史イベント定義
 
-// ========== 年代システム (1889-2100, 1票=10年) ==========
-const VOTES_PER_CYCLE = 22;
+// ========== 年代システム (1889-2100, 3票=10年) ==========
+const VOTES_PER_ADVANCE = 3;   // 何票溜まったら10年進むか
+const VOTES_PER_CYCLE = VOTES_PER_ADVANCE * 22;  // 66票で1サイクル
 
 function getEffectiveVotes() {
     return Math.max(0, totalVotes - cycleStartVotes);
 }
 
+// 10年進むステップ数（0〜22）
+function getYearSteps() {
+    return Math.floor(getEffectiveVotes() / VOTES_PER_ADVANCE);
+}
+
 function getCurrentYear() {
-    const effective = getEffectiveVotes();
-    if (effective >= 22) return END_YEAR;
-    return START_YEAR + effective * YEARS_PER_VOTE;
+    const steps = getYearSteps();
+    if (steps >= 22) return END_YEAR;
+    return START_YEAR + steps * YEARS_PER_VOTE;
 }
 
 function getWorldLine() {
@@ -19,7 +25,12 @@ function getWorldLine() {
 }
 
 function isEndingTrigger() {
-    return getEffectiveVotes() >= 22;
+    return getYearSteps() >= 22;
+}
+
+// 次の10年進行まであと何票か（0〜2）
+function getAdvanceCounter() {
+    return getEffectiveVotes() % VOTES_PER_ADVANCE;
 }
 
 // ========== 歴史イベント定義 ==========
@@ -30,7 +41,7 @@ const historicalEvents = {
     1909: {text: '浦安町に昇格', emoji: '🏛️'},
     1919: {text: '大正6年の大津波の記憶… 高潮で浦安が水没した', emoji: '🌊'},
     1929: {text: '浦安橋の建設がはじまる — 東京への道がひらける', emoji: '🌉'},
-    1939: {text: '戦時中… 浦安の漁師たちも戦地へ', emoji: '⚔️'},
+    // 1939年イベント削除
     1949: {text: 'キティ台風 襲来！ 堤防14か所が決壊、町の7割が浸水…', emoji: '🌀'},
     1959: {text: '黒い水事件 — 工場排水で海が汚染された…', emoji: '🖤', special: 'blackWater'},
     1969: {text: '地下鉄東西線 開通！ 浦安が東京とつながった', emoji: '🚇'},
@@ -53,12 +64,12 @@ const historicalEvents = {
 // ========== ランクシステム ==========
 const rankLevels = [
     { min: 0, rank: 'F', title: '田舎の漁村', color: '#999', star: '☆', desc: 'のどかな浦安…投票で街を発展させよう！' },
-    { min: 2, rank: 'E', title: 'ちいさな集落', color: '#88aacc', star: '⭐', desc: '少しずつ人が集まり始めた' },
-    { min: 5, rank: 'D', title: 'のどかな町', color: '#66bb6a', star: '⭐⭐', desc: '町に活気が出てきた！' },
-    { min: 9, rank: 'C', title: '発展する港町', color: '#42a5f5', star: '⭐⭐⭐', desc: '商業と観光が盛り上がってきた！' },
-    { min: 14, rank: 'B', title: 'にぎわう観光都市', color: '#ffa726', star: '⭐⭐⭐⭐', desc: '浦安は観光名所に！' },
-    { min: 18, rank: 'A', title: '輝く海辺の楽園', color: '#ef5350', star: '⭐⭐⭐⭐⭐', desc: '自然と商業が調和する理想の街！' },
-    { min: 22, rank: 'S', title: '伝説のめいすいくんワールド', color: '#e040fb', star: '🌟🌟🌟🌟🌟', desc: '全てが揃った究極の浦安！' },
+    { min: 6, rank: 'E', title: 'ちいさな集落', color: '#88aacc', star: '⭐', desc: '少しずつ人が集まり始めた' },
+    { min: 15, rank: 'D', title: 'のどかな町', color: '#66bb6a', star: '⭐⭐', desc: '町に活気が出てきた！' },
+    { min: 27, rank: 'C', title: '発展する港町', color: '#42a5f5', star: '⭐⭐⭐', desc: '商業と観光が盛り上がってきた！' },
+    { min: 42, rank: 'B', title: 'にぎわう観光都市', color: '#ffa726', star: '⭐⭐⭐⭐', desc: '浦安は観光名所に！' },
+    { min: 54, rank: 'A', title: '輝く海辺の楽園', color: '#ef5350', star: '⭐⭐⭐⭐⭐', desc: '自然と商業が調和する理想の街！' },
+    { min: 66, rank: 'S', title: '伝説のめいすいくんワールド', color: '#e040fb', star: '🌟🌟🌟🌟🌟', desc: '全てが揃った究極の浦安！' },
 ];
 
 function getOverallRank() {
@@ -80,11 +91,11 @@ function getOverallRank() {
 
 // ========== レベルシステム ==========
 const levelThresholds = [
-    { min: 0, max: 4, title: "はらっぱ", emoji: "🌾" },
-    { min: 5, max: 9, title: "ちいさなむら", emoji: "🏘️" },
-    { min: 10, max: 14, title: "にぎやかなまち", emoji: "🏙️" },
-    { min: 15, max: 19, title: "すてきなみやこ", emoji: "👑" },
-    { min: 20, max: 22, title: "ゆめのまち", emoji: "✨" },
+    { min: 0, max: 14, title: "はらっぱ", emoji: "🌾" },
+    { min: 15, max: 29, title: "ちいさなむら", emoji: "🏘️" },
+    { min: 30, max: 44, title: "にぎやかなまち", emoji: "🏙️" },
+    { min: 45, max: 59, title: "すてきなみやこ", emoji: "👑" },
+    { min: 60, max: 66, title: "ゆめのまち", emoji: "✨" },
 ];
 
 function getCurrentLevel() {

@@ -41,5 +41,6 @@ let totalVotes = 0;
 let worldLineOffset = 0;
 let cycleStartVotes = 0;
 let decorationOffset = Object.fromEntries(CHAR_TYPES.map(t => [t, 0]));
+let cycleStartPerChar = Object.fromEntries(CHAR_TYPES.map(t => [t, 0])); // キャラ別の世界線開始時票数
 let endingActive = false;
 let isInitialLoad = true;
