@@ -4431,7 +4431,7 @@ h<!DOCTYPE html>
             // 逆転検知
             const sorted = Object.entries(votes).sort((a, b) => b[1] - a[1]);
             const currentRanking = sorted.map(e => e[0]);
-            if (previousRanking.length > 0 && currentRanking[0] !== previousRanking[0] && sorted[0][1] > 0) {
+            if (previousRanking.length > 0 && currentRanking[0] !== previousRanking[0] && sorted[0][1] >= 5) {
                 showReversal(charMetadata[currentRanking[0]]?.name || '');
             }
             previousRanking = [...currentRanking];
