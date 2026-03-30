@@ -5093,6 +5093,8 @@ h<!DOCTYPE html>
                 // キャラ別の世界線開始票数を記録
                 CHAR_TYPES.forEach(t => { cycleStartPerChar[t] = votes[t] || 0; });
                 _lastEraEventStep = -1;  // 年代イベントチェックをリセット（新世界線開始）
+                CHAR_TYPES.forEach(t => { _cutinBatchCount[t] = 0; }); // カットインバッチカウンターリセット
+                _prevVoteCounts = { ...votes }; // バッチ検知用の前回票数もリセット
                 if (typeof lastEventVotes !== 'undefined') lastEventVotes = totalVotes; // ランダムイベントカウンターもリセット
                 clearTimeout(window._endingTriggerTimeout);  // エンディング重複起動タイマーをキャンセル
                 decorationOffset = {
@@ -5200,7 +5202,7 @@ h<!DOCTYPE html>
                             <p class="cert-char">${charName}</p>
                             <p>に投票しました！</p>
                             <p class="cert-thanks">ありがとう！🗳️</p>
-                            <p class="cert-total">現在の総投票数: ${totalVotes}票</p>
+                            <p class="cert-total">現在の総投票数: ${getEffectiveVotes()}票</p>
                         </div>
                     </div>
                 </div>
