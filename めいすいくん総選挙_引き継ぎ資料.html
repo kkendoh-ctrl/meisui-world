@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>めいすいくん総選挙 引き継ぎ資料</title>
+<style>
+  /* リセット・基本 */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Meiryo", sans-serif;
+    background: #fff;
+    color: #333;
+    line-height: 1.75;
+    padding: 24px 32px 64px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  /* 印刷対応 */
+  @media print {
+    body { padding: 0; font-size: 11pt; }
+    .section { break-inside: avoid; page-break-inside: avoid; }
+    h2 { break-after: avoid; }
+    table { font-size: 10pt; }
+    a { color: #333; text-decoration: none; }
+    a::after { content: " (" attr(href) ")"; font-size: 9pt; color: #666; }
+    .toc { break-after: page; }
+  }
+
+  /* タイトル */
+  h1 {
+    text-align: center;
+    font-size: 1.8rem;
+    color: #1a237e;
+    border-bottom: 4px double #1a237e;
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 32px;
+    font-size: 0.95rem;
+  }
+
+  /* 目次 */
+  .toc {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px 28px;
+    margin-bottom: 36px;
+  }
+  .toc h2 {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 10px;
+    border: none;
+    padding: 0;
+    background: none;
+  }
+  .toc ol { padding-left: 1.6em; }
+  .toc li { margin-bottom: 4px; }
+  .toc a { color: #1565c0; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* セクション */
+  .section { margin-bottom: 36px; }
+
+  /* 色付きセクションヘッダー */
+  h2 {
+    font-size: 1.25rem;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
+  h2.c1  { background: #1565c0; } /* 青 */
+  h2.c2  { background: #00838f; } /* ティール */
+  h2.c3  { background: #6a1b9a; } /* 紫 */
+  h2.c4  { background: #2e7d32; } /* 緑 */
+  h2.c5  { background: #e65100; } /* オレンジ */
+  h2.c6  { background: #ad1457; } /* ピンク */
+  h2.c7  { background: #4527a0; } /* 深紫 */
+  h2.c8  { background: #00695c; } /* 深緑 */
+  h2.c9  { background: #bf360c; } /* 深赤 */
+  h2.c10 { background: #283593; } /* 藍 */
+  h2.c11 { background: #558b2f; } /* 黄緑 */
+  h2.c12 { background: #795548; } /* 茶 */
+
+  h3 {
+    font-size: 1.05rem;
+    color: #1a237e;
+    border-left: 4px solid #1a237e;
+    padding-left: 10px;
+    margin: 20px 0 10px;
+  }
+
+  /* テーブル */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 0.92rem;
+  }
+  th, td {
+    border: 1px solid #bbb;
+    padding: 7px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #e8eaf6;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+
+  /* リスト */
+  ul, ol { padding-left: 1.5em; margin: 8px 0 16px; }
+  li { margin-bottom: 4px; }
+
+  /* リンク */
+  a { color: #1565c0; }
+
+  /* コード */
+  code {
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    font-family: "Consolas", "Monaco", monospace;
+  }
+
+  /* カラーチップ */
+  .color-chip {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    border: 1px solid #999;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+
+  /* クレジット */
+  .credit {
+    text-align: center;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 2px solid #ccc;
+    color: #555;
+    font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>浦安めいすいくん総選挙 引き継ぎ資料</h1>
+<p class="subtitle">最終更新: 2026年3月30日 / BUILD_REV: 16</p>
+
+<!-- 目次 -->
+<nav class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#ch1">ゲーム概要</a></li>
+    <li><a href="#ch2">システム構成</a></li>
+    <li><a href="#ch3">キャラクター一覧</a></li>
+    <li><a href="#ch4">投票・年代進行システム</a></li>
+    <li><a href="#ch5">建物・施設システム</a></li>
+    <li><a href="#ch6">街ランク・レベルシステム</a></li>
+    <li><a href="#ch7">エンディング・世界線</a></li>
+    <li><a href="#ch8">Firebaseデータ構造</a></li>
+    <li><a href="#ch9">埋め立て進化・マップ</a></li>
+    <li><a href="#ch10">ランダムイベント</a></li>
+    <li><a href="#ch11">運用ガイド</a></li>
+    <li><a href="#ch12">既知の課題（低優先度）</a></li>
+  </ol>
+</nav>
+
+<!-- 第1章 -->
+<div class="section" id="ch1">
+  <h2 class="c1">1. ゲーム概要</h2>
+  <ul>
+    <li>「浦安めいすいくん総選挙」は浦安市のマスコットキャラクター「めいすいくん」たちに投票して仮想の浦安を1889年から2100年まで発展させる選挙体験ゲーム</li>
+    <li>タブレット端末（iPad等）3台から投票、大画面モニターでリアルタイムにマップが変化</li>
+  </ul>
+  <h3>URL・ホスティング</h3>
+  <table>
+    <tr><th>項目</th><th>URL / 情報</th></tr>
+    <tr><td>本番（大画面）</td><td><a href="https://urayasu-meisui.github.io/meisui-world/world.html">https://urayasu-meisui.github.io/meisui-world/world.html</a></td></tr>
+    <tr><td>投票画面</td><td><a href="https://urayasu-meisui.github.io/meisui-world/vote.html">https://urayasu-meisui.github.io/meisui-world/vote.html</a></td></tr>
+    <tr><td>リポジトリ</td><td><a href="https://github.com/urayasu-meisui/meisui-world">https://github.com/urayasu-meisui/meisui-world</a></td></tr>
+    <tr><td>ホスティング</td><td>GitHub Pages（mainブランチ直接デプロイ）</td></tr>
+    <tr><td>データベース</td><td>Firebase Realtime Database</td></tr>
+  </table>
+</div>
+
+<!-- 第2章 -->
+<div class="section" id="ch2">
+  <h2 class="c2">2. システム構成</h2>
+  <h3>ファイル構成</h3>
+  <table>
+    <tr><th>ファイル</th><th>サイズ</th><th>役割</th></tr>
+    <tr><td><code>world.html</code></td><td>300KB</td><td>メイン大画面（マップ・投票速報・イベント表示）</td></tr>
+    <tr><td><code>vote.html</code></td><td>17KB</td><td>タブレット投票インターフェース</td></tr>
+    <tr><td><code>index.html</code></td><td>4KB</td><td>ランディングページ</td></tr>
+    <tr><td><code>editor.html</code></td><td>26KB</td><td>マップエディタ（位置調整用）</td></tr>
+    <tr><td><code>js/config.js</code></td><td>463KB</td><td>キャラ設定・画像データ（base64埋め込み）</td></tr>
+    <tr><td><code>js/game-logic.js</code></td><td>7KB</td><td>年代計算・ランク・歴史イベント定義</td></tr>
+    <tr><td><code>js/building-system.js</code></td><td>9KB</td><td>建物解放・モルック大会イベント</td></tr>
+    <tr><td><code>js/event-system.js</code></td><td>20KB</td><td>イベント演出・埋め立て進化</td></tr>
+    <tr><td><code>js/firebase.js</code></td><td>2KB</td><td>Firebase初期化・グローバル変数</td></tr>
+    <tr><td><code>js/audio.js</code></td><td>10KB</td><td>BGM・効果音管理</td></tr>
+    <tr><td><code>js/popup-manager.js</code></td><td>5KB</td><td>ポップアップ表示管理</td></tr>
+    <tr><td><code>css/style.css</code></td><td>39KB</td><td>メインスタイルシート</td></tr>
+  </table>
+  <h3>技術スタック</h3>
+  <ul>
+    <li>HTML / CSS / JavaScript（フレームワーク不使用）</li>
+    <li>Firebase Realtime Database</li>
+    <li>GitHub Pages</li>
+    <li>Canvas API</li>
+    <li>Web Audio API</li>
+  </ul>
+</div>
+
+<!-- 第3章 -->
+<div class="section" id="ch3">
+  <h2 class="c3">3. キャラクター一覧（6体）</h2>
+  <table>
+    <tr><th>キャラクター名</th><th>テーマカラー</th><th>政策テーマ</th></tr>
+    <tr><td>イチョウめいすいくん</td><td><span class="color-chip" style="background:#ffd700"></span>#ffd700（金）</td><td>環境・緑化</td></tr>
+    <tr><td>ビーナスめいちゃん</td><td><span class="color-chip" style="background:#ff6b6b"></span>#ff6b6b（赤）</td><td>観光・まちづくり</td></tr>
+    <tr><td>ツツジめいちゃん</td><td><span class="color-chip" style="background:#e040fb"></span>#e040fb（紫）</td><td>子育て・教育</td></tr>
+    <tr><td>浦安の海めいすいくん</td><td><span class="color-chip" style="background:#42a5f5"></span>#42a5f5（青）</td><td>環境保全・三番瀬</td></tr>
+    <tr><td>屋形船めいすいくん</td><td><span class="color-chip" style="background:#ff8a65"></span>#ff8a65（橙）</td><td>文化・伝統継承</td></tr>
+    <tr><td>漁師めいすいくん</td><td><span class="color-chip" style="background:#66bb6a"></span>#66bb6a（緑）</td><td>産業振興・商業</td></tr>
+  </table>
+
+  <h3>キャラ別投票効果</h3>
+  <table>
+    <tr><th>キャラクター</th><th>効果</th><th>レベル（5段階）</th></tr>
+    <tr><td>イチョウめいすいくん</td><td>イチョウの木が増える</td><td>荒れ地 → 苗木 → 並木 → 黄金通り → 黄金の森</td></tr>
+    <tr><td>ツツジめいちゃん</td><td>花畑が広がる</td><td>草原 → 花壇 → 小道 → パラダイス → ピンクのじゅうたん</td></tr>
+    <tr><td>ビーナスめいちゃん</td><td>ビーチが賑やかに</td><td>じゃりの浜辺 → ビーチ → リゾート → 灯台 → マリーナ</td></tr>
+    <tr><td>浦安の海めいすいくん</td><td>海の生き物が来る</td><td>にごった海 → お魚 → イルカ → クジラ → サンゴ</td></tr>
+    <tr><td>屋形船めいすいくん</td><td>おまつりが賑やかに</td><td>しずかな水辺 → 屋形船 → 提灯 → まつり → 花火</td></tr>
+    <tr><td>漁師めいすいくん</td><td>魚市場が大きくなる</td><td>あき地 → 露店 → 魚市場 → 商店街 → 港のにぎわい</td></tr>
+  </table>
+</div>
+
+<!-- 第4章 -->
+<div class="section" id="ch4">
+  <h2 class="c4">4. 投票・年代進行システム</h2>
+  <ul>
+    <li>3票で10年進む（&#9679;&#9675;&#9675; → &#9679;&#9679;&#9675; → &#9679;&#9679;&#9679; → 次の年代へ）</li>
+    <li>全21ステップ: Step 0 (1889-1900年) → Step 20 (2091-2100年)</li>
+    <li>63票で1サイクル（21ステップ &times; 3票）</li>
+    <li>カットイン: キャラ別に3票溜まるとカットイン演出が発生</li>
+  </ul>
+
+  <h3>年代マッピング</h3>
+  <table>
+    <tr><th>ステップ</th><th>年代</th><th>歴史イベント</th></tr>
+    <tr><td>0</td><td>1889-1900</td><td>浦安村 誕生（3村合併）</td></tr>
+    <tr><td>1</td><td>1901-1910</td><td>べか舟漁 最盛期</td></tr>
+    <tr><td>2</td><td>1911-1920</td><td>浦安町に昇格</td></tr>
+    <tr><td>3</td><td>1921-1930</td><td>高潮で浦安が水没</td></tr>
+    <tr><td>4</td><td>1931-1940</td><td>浦安橋の建設</td></tr>
+    <tr><td>5</td><td>1941-1950</td><td>キティ台風 襲来</td></tr>
+    <tr><td>6</td><td>1951-1960</td><td>黒い水事件（特殊エフェクト付き）</td></tr>
+    <tr><td>7</td><td>1961-1970</td><td>地下鉄東西線 開通 + 埋め立て第1段階</td></tr>
+    <tr><td>8</td><td>1971-1980</td><td>埋め立てで面積4倍 + 埋め立て第2段階</td></tr>
+    <tr><td>9</td><td>1981-1990</td><td>JR京葉線 開通 + 埋め立て第3段階（完了）</td></tr>
+    <tr><td>10</td><td>1991-2000</td><td>人口15万人突破</td></tr>
+    <tr><td>11</td><td>2001-2010</td><td>TDR来園者3億人</td></tr>
+    <tr><td>12</td><td>2011-2020</td><td>浦安三社祭</td></tr>
+    <tr><td>13</td><td>2021-2030</td><td>三番瀬自然再生</td></tr>
+    <tr><td>14</td><td>2031-2040</td><td>スマートシティ計画</td></tr>
+    <tr><td>15</td><td>2041-2050</td><td>葛西に橋</td></tr>
+    <tr><td>16</td><td>2051-2060</td><td>海上ソーラー発電</td></tr>
+    <tr><td>17</td><td>2061-2070</td><td>ロープウェイ開通</td></tr>
+    <tr><td>18</td><td>2071-2080</td><td>海底トンネル</td></tr>
+    <tr><td>19</td><td>2081-2090</td><td>海上都市計画</td></tr>
+    <tr><td>20</td><td>2091-2100</td><td>未来都市 完成間近</td></tr>
+  </table>
+</div>
+
+<!-- 第5章 -->
+<div class="section" id="ch5">
+  <h2 class="c5">5. 建物・施設システム</h2>
+
+  <h3>共通建物（累計有効票数で解放）12個</h3>
+  <table>
+    <tr><th>建物名</th><th>必要票数</th><th>カテゴリ</th></tr>
+    <tr><td>おうち</td><td>1票</td><td>住居</td></tr>
+    <tr><td>がっこう</td><td>3票</td><td>教育</td></tr>
+    <tr><td>こうえん</td><td>5票</td><td>環境</td></tr>
+    <tr><td>としょかん</td><td>7票</td><td>文化</td></tr>
+    <tr><td>びょういん</td><td>9票</td><td>医療</td></tr>
+    <tr><td>えき</td><td>11票</td><td>交通</td></tr>
+    <tr><td>さんばんせかんさつかん</td><td>12票</td><td>自然</td></tr>
+    <tr><td>しょうぼうしょ</td><td>13票</td><td>防災</td></tr>
+    <tr><td>こうみんかん</td><td>15票</td><td>交流</td></tr>
+    <tr><td>はくぶつかん</td><td>17票</td><td>文化</td></tr>
+    <tr><td>しやくしょ</td><td>19票</td><td>行政</td></tr>
+    <tr><td>ぶんかかいかん</td><td>20票</td><td>文化</td></tr>
+  </table>
+
+  <h3>キャラ別建物</h3>
+  <table>
+    <tr><th>キャラクター</th><th>建物1</th><th>建物2</th><th>建物3</th></tr>
+    <tr><td>イチョウめいすいくん</td><td>めいすいこうえん (3票)</td><td>イチョウひろば (6票)</td><td>もりのこうえん (9票)</td></tr>
+    <tr><td>ツツジめいちゃん</td><td>おはなやさん (3票)</td><td>おはなばたけ (6票)</td><td>はなぞのガーデン (9票)</td></tr>
+    <tr><td>ビーナスめいちゃん</td><td>うみのいえ (2票)</td><td>ホテル (5票)</td><td>すいぞくかん (8票)</td></tr>
+    <tr><td>浦安の海めいすいくん</td><td>つりばし (2票)</td><td>うみのセンター (5票)</td><td>サンゴしょう (8票)</td></tr>
+    <tr><td>屋形船めいすいくん</td><td>じんじゃ (2票)</td><td>おまつりかいかん (5票)</td><td>はなびスポット (8票)</td></tr>
+    <tr><td>漁師めいすいくん</td><td>さかなや (2票)</td><td>いちば (5票)</td><td>みなと (8票)</td></tr>
+  </table>
+
+  <h3>特別イベント</h3>
+  <p>イチョウめいすいくんの公園3つ完成 → 「モルック大会 開催！」</p>
+</div>
+
+<!-- 第6章 -->
+<div class="section" id="ch6">
+  <h2 class="c6">6. 街ランク・レベルシステム</h2>
+
+  <h3>ランク（F〜S、7段階）</h3>
+  <table>
+    <tr><th>ランク</th><th>必要票数</th><th>タイトル</th></tr>
+    <tr><td>F</td><td>0票</td><td>田舎の漁村</td></tr>
+    <tr><td>E</td><td>6票</td><td>ちいさな集落</td></tr>
+    <tr><td>D</td><td>15票</td><td>のどかな町</td></tr>
+    <tr><td>C</td><td>27票</td><td>発展する港町</td></tr>
+    <tr><td>B</td><td>39票</td><td>にぎわう観光都市</td></tr>
+    <tr><td>A</td><td>52票</td><td>輝く海辺の楽園</td></tr>
+    <tr><td>S</td><td>63票</td><td>伝説のめいすいくんワールド</td></tr>
+  </table>
+
+  <h3>レベル（5段階）</h3>
+  <table>
+    <tr><th>レベル名</th><th>票数範囲</th></tr>
+    <tr><td>はらっぱ</td><td>0〜14票</td></tr>
+    <tr><td>ちいさなむら</td><td>15〜29票</td></tr>
+    <tr><td>にぎやかなまち</td><td>30〜44票</td></tr>
+    <tr><td>すてきなみやこ</td><td>45〜56票</td></tr>
+    <tr><td>ゆめのまち</td><td>57〜63票</td></tr>
+  </table>
+</div>
+
+<!-- 第7章 -->
+<div class="section" id="ch7">
+  <h2 class="c7">7. エンディング・世界線</h2>
+
+  <h3>エンディングの流れ</h3>
+  <ol>
+    <li>2100年到達 → 白フラッシュ + 花火 + タイトルカード「2100年 到達！」（4秒）</li>
+    <li>マップツアー（5箇所を巡回、各5秒）</li>
+    <li>世界タイプ発表（最多得票キャラで決定）</li>
+    <li>投票ランキング（この世界線の票数で表示）</li>
+    <li>選挙メッセージ「本物の選挙もあなたの一票が浦安を変える！」</li>
+    <li>「次の世界線へ」ボタン表示</li>
+  </ol>
+
+  <h3>世界線</h3>
+  <p>「次の世界線へ」ボタンを押すと1889年に戻り新しいサイクル開始。今日の分の記録が街ランクに表示される。</p>
+</div>
+
+<!-- 第8章 -->
+<div class="section" id="ch8">
+  <h2 class="c8">8. Firebaseデータ構造</h2>
+  <table>
+    <tr><th>パス</th><th>型</th><th>説明</th></tr>
+    <tr><td><code>votes/{charType}</code></td><td>number</td><td>各キャラの累計投票数</td></tr>
+    <tr><td><code>worldLineOffset</code></td><td>number</td><td>世界線オフセット（0始まり）</td></tr>
+    <tr><td><code>stats/cycleStartVotes</code></td><td>number</td><td>現世界線開始時の累計票数</td></tr>
+    <tr><td><code>stats/cycleStartPerChar</code></td><td>object</td><td>キャラ別の世界線開始時票数</td></tr>
+    <tr><td><code>stats/decorationOffset</code></td><td>object</td><td>キャラ別の装飾オフセット</td></tr>
+    <tr><td><code>stats/builtBuildings</code></td><td>array</td><td>建設済み建物IDリスト</td></tr>
+    <tr><td><code>stats/worldLineHistory/{n}</code></td><td>object</td><td>世界線nの記録</td></tr>
+    <tr><td><code>stats/dailyVotes</code></td><td>object</td><td>日別得票数（date, startTotal, count）</td></tr>
+    <tr><td><code>stats/lastVoteChar</code></td><td>string</td><td>最後に投票されたキャラ</td></tr>
+  </table>
+</div>
+
+<!-- 第9章 -->
+<div class="section" id="ch9">
+  <h2 class="c9">9. 埋め立て進化・マップ</h2>
+
+  <h3>埋め立て3段階</h3>
+  <table>
+    <tr><th>年代</th><th>エリア名</th><th>内容</th></tr>
+    <tr><td>1961年〜</td><td>中町エリア</td><td>東野・富岡・今川・海楽・美浜・入船</td></tr>
+    <tr><td>1971年〜</td><td>舞浜・新町エリア</td><td>舞浜・日の出・明海・港・千鳥</td></tr>
+    <tr><td>1981年〜</td><td>全域</td><td>埋め立てで今と同じ大きさになった</td></tr>
+  </table>
+
+  <h3>近隣自治体の植物</h3>
+  <ul>
+    <li><strong>江東区エリア（マップ左端）:</strong> サザンカ（区の花）・クロマツ（区の木）</li>
+    <li><strong>江戸川区エリア（マップ左寄り）:</strong> ツツジ（区の花）・クスノキ（区の木）</li>
+  </ul>
+</div>
+
+<!-- 第10章 -->
+<div class="section" id="ch10">
+  <h2 class="c10">10. ランダムイベント</h2>
+  <ul>
+    <li><strong>ポジティブイベント（11種）:</strong> 5票ごとに発動チェック。おまつり、イチョウ並木、モルック大会など。</li>
+    <li><strong>チャレンジイベント（6種）:</strong> たいふう、じしん、さかなが減るなど。</li>
+  </ul>
+</div>
+
+<!-- 第11章 -->
+<div class="section" id="ch11">
+  <h2 class="c11">11. 運用ガイド</h2>
+
+  <h3>イベント当日の準備</h3>
+  <ol>
+    <li><strong>大画面モニター:</strong> <code>world.html</code> をChromeで全画面表示（F11）</li>
+    <li><strong>タブレット端末（3台）:</strong> <code>vote.html</code> を開く</li>
+    <li><strong>音楽開始:</strong> 画面クリックで音楽開始（ブラウザの自動再生制限のため）</li>
+  </ol>
+
+  <h3>管理操作</h3>
+  <table>
+    <tr><th>操作</th><th>手順</th></tr>
+    <tr><td>日別得票数リセット</td><td>街ランク → 「日別リセット」ボタン</td></tr>
+    <tr><td>全データリセット</td><td>設定 → 「全データリセット」（復元不可）</td></tr>
+    <tr><td>デバッグ: +10年</td><td>設定 → 「+10年進める」（3票追加）</td></tr>
+    <tr><td>デバッグ: +50年</td><td>設定 → 「+50年進める」（15票追加）</td></tr>
+    <tr><td>スマホ操作</td><td>設定 → 「スマホをしまう」/「電源を切る」</td></tr>
+  </table>
+
+  <h3>デプロイ</h3>
+  <ul>
+    <li><code>git add</code> → <code>git commit</code> → <code>git push</code> でGitHub Pagesに自動デプロイ</li>
+    <li><code>BUILD_REV</code>: <code>world.html</code> 内のBUILD_REV定数を変更のたびにインクリメント</li>
+  </ul>
+</div>
+
+<!-- 第12章 -->
+<div class="section" id="ch12">
+  <h2 class="c12">12. 既知の課題（低優先度）</h2>
+  <table>
+    <tr><th>ID</th><th>内容</th><th>詳細</th></tr>
+    <tr><td>Bug3</td><td>薄い票分布</td><td>投票が全キャラに均等に分散した場合、バーグラフの差が小さくなり視覚的にわかりづらい。票数が少ないうちは特に目立つ。</td></tr>
+    <tr><td>Bug8</td><td>同時投票時のoldLevel判定</td><td>複数端末から同時に投票された場合、レベルアップ判定に使うoldLevelが正確に取得できず、レベルアップ演出が二重に発生したり、スキップされたりする可能性がある。</td></tr>
+    <tr><td>Bug9</td><td>2099年エッジケース</td><td>最終ステップ（2091-2100年）付近で、エンディングトリガーのタイミングが世界線遷移と競合する可能性がある。ページロード後5秒間の誤発火防止ガードで軽減済み。</td></tr>
+  </table>
+</div>
+
+<!-- クレジット -->
+<div class="credit">
+  <p><strong>浦安市明るい選挙推進協議会 / 浦安市選挙管理委員会</strong></p>
+</div>
+
+</body>
+</html>

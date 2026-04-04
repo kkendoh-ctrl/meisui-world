@@ -7,6 +7,7 @@ h<!DOCTYPE html>
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>浦安ご当地めいすいくん人気投票選挙</title>
+    <link rel="stylesheet" href="css/design-system.css">
     <link rel="stylesheet" href="css/style.css">
     <!-- Firebase SDK -->
     <script src="js/config.js"></script>
@@ -26,7 +27,7 @@ h<!DOCTYPE html>
 
 
     <!-- Sound Toggle Button（設定画面に移行済みのため非表示） -->
-    <button id="soundToggleBtn" title="音声ON/OFF" style="display:none;">🔊</button>
+    <button id="soundToggleBtn" title="音声ON/OFF" aria-label="音声ON/OFF" style="display:none;">🔊</button>
 
     <!-- Ambient Overlay for Day/Night Cycle -->
     <div id="ambientOverlay"></div>
@@ -102,6 +103,18 @@ h<!DOCTYPE html>
             padding:6px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:bold;
             background:#66bb6a;color:#fff;
         ">🐟 漁師 +1票</button>
+
+        <div style="height:1px;background:#555;margin:4px 0;"></div>
+        <div style="font-size:10px;color:#aaa;text-align:center;">裏エンディング</div>
+        <button id="secretEdToggleBtn" onclick="toggleSecretEd()" style="
+            padding:10px;border:3px solid #555;border-radius:10px;cursor:pointer;font-size:13px;font-weight:bold;width:100%;
+            background:#333;color:#666;
+        ">📖 裏ED：OFF</button>
+        <div id="secretEdHint" style="font-size:10px;color:#888;line-height:1.4;margin-top:2px;">ONで次のキャラ投票に63票→裏ED突入</div>
+        <button onclick="debugLotteryTest();" style="
+            padding:8px;border:none;border-radius:10px;cursor:pointer;font-size:12px;font-weight:bold;width:100%;margin-top:4px;
+            background:linear-gradient(135deg,#8B6914,#C4A43A);color:#fff;
+        ">�� くじ引きテスト（同票→裏ED）</button>
 
         <div style="height:1px;background:#555;margin:4px 0;"></div>
         <button onclick="toggleDebugPanel();" style="
@@ -241,6 +254,7 @@ h<!DOCTYPE html>
                   <svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l5 5-5 5"/></svg>
                 </button>
               </div>
+
 
               <!-- セクション：データ管理 -->
               <div style="font-size:10px;font-weight:600;color:#6c6c70;padding:0 6px 4px;text-transform:uppercase;letter-spacing:0.5px;">データ管理</div>
@@ -818,7 +832,7 @@ h<!DOCTYPE html>
                 font-weight: bold;
                 color: #333;
                 box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-                animation: slideInRight 0.5s ease-out;
+                animation: slideInRight 0.5s var(--ease-spring-gentle);
                 font-family: 'BIZ UDGothic','Yu Gothic UI','Hiragino Sans','Meiryo',sans-serif;
             `;
             notif.innerHTML = `<div style="font-size: 32px; margin-bottom: 8px;">${emoji}</div><div>${title}</div>`;
@@ -3863,46 +3877,51 @@ h<!DOCTYPE html>
             // 1981年以降: オーバーレイなし（フルマップ表示）
 
             // For future years (after 2026), draw easter egg elements on top of map
-            if (currentYear >= 2049) {
-                // 堀江大橋（橋本体）
-                // 橋の幅をstart/endの両端から上下に広げて描画
-                const bsx = fixedPos.kasai_bridge_start.x, bsy = fixedPos.kasai_bridge_start.y;
-                const bex = fixedPos.kasai_bridge_end.x,   bey = fixedPos.kasai_bridge_end.y;
-                // 橋の法線方向（垂直方向）を計算
-                const bdx = bex - bsx, bdy = bey - bsy;
-                const blen = Math.hypot(bdx, bdy);
-                const bnx = -bdy / blen, bny = bdx / blen; // 法線
-                const halfW = 18; // 橋の半幅（px）
-                // 橋の塗り（道路部分）
-                ctx.beginPath();
-                ctx.moveTo(bsx + bnx * halfW, bsy + bny * halfW);
-                ctx.lineTo(bex + bnx * halfW, bey + bny * halfW);
-                ctx.lineTo(bex - bnx * halfW, bey - bny * halfW);
-                ctx.lineTo(bsx - bnx * halfW, bsy - bny * halfW);
-                ctx.closePath();
-                ctx.fillStyle = 'rgba(230, 81, 0, 0.35)';
-                ctx.fill();
-                // 橋の輪郭線（両端）
-                ctx.strokeStyle = '#E65100';
-                ctx.lineWidth = 4;
-                ctx.setLineDash([10, 5]);
-                ctx.beginPath();
-                ctx.moveTo(bsx + bnx * halfW, bsy + bny * halfW);
-                ctx.lineTo(bex + bnx * halfW, bey + bny * halfW);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(bsx - bnx * halfW, bsy - bny * halfW);
-                ctx.lineTo(bex - bnx * halfW, bey - bny * halfW);
-                ctx.stroke();
-                ctx.setLineDash([]);
+            if (currentYear >= 2060 && (votes['ryoushi'] || 0) >= 10) {
+                // 堀江大橋（画像）
+                // ※ 2060年までに漁師めいすいくんに10票以上 → 2070年に出現
+                //   漁師にいっぱい票が入ったから、漁港と江戸川区をつなぐ大橋が実現した！
+                if (!window._horieBridgeImg) {
+                    window._horieBridgeImg = new Image();
+                    window._horieBridgeImg.src = '堀江大橋.png';
+                }
+                const brImg = window._horieBridgeImg;
+                if (brImg.complete && brImg.naturalWidth > 0) {
+                    const bcx = fixedPos.kasai_bridge.x;
+                    const bcy = fixedPos.kasai_bridge.y;
+                    // 橋画像は斜め方向なので、始点→終点の角度に合わせて回転
+                    const bsx = fixedPos.kasai_bridge_start.x, bsy = fixedPos.kasai_bridge_start.y;
+                    const bex = fixedPos.kasai_bridge_end.x,   bey = fixedPos.kasai_bridge_end.y;
+                    const bridgeAngle = Math.atan2(bey - bsy, bex - bsx);
+                    // 画像サイズ（MAPに合わせて調整）
+                    const bridgeW = 220;
+                    const bridgeH = bridgeW * (brImg.naturalHeight / brImg.naturalWidth);
+
+                    ctx.save();
+                    ctx.translate(bcx, bcy);
+                    ctx.rotate(bridgeAngle - Math.PI / 4); // 画像がアイソメで斜め45度なので補正
+                    ctx.drawImage(brImg, -bridgeW / 2, -bridgeH / 2, bridgeW, bridgeH);
+                    ctx.restore();
+                }
                 // 橋名ラベル
-                ctx.font = 'bold 18px sans-serif';
-                ctx.fillStyle = '#E65100';
-                ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-                ctx.lineWidth = 4;
+                ctx.font = 'bold 14px sans-serif';
                 ctx.textAlign = 'center';
-                ctx.strokeText('堀江大橋', fixedPos.kasai_bridge.x, fixedPos.kasai_bridge.y - 6);
-                ctx.fillText('堀江大橋', fixedPos.kasai_bridge.x, fixedPos.kasai_bridge.y - 6);
+                // 背景ボックス
+                const blx = fixedPos.kasai_bridge.x;
+                const bly = fixedPos.kasai_bridge.y + 60;
+                const blGrad = ctx.createLinearGradient(blx - 50, bly, blx + 50, bly);
+                blGrad.addColorStop(0, 'rgba(180,200,230,0.6)');
+                blGrad.addColorStop(0.5, 'rgba(220,235,255,0.75)');
+                blGrad.addColorStop(1, 'rgba(180,200,230,0.6)');
+                ctx.fillStyle = blGrad;
+                ctx.beginPath();
+                ctx.roundRect(blx - 50, bly - 13, 100, 20, 4);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.fillStyle = '#1a2a3a';
+                ctx.fillText('堀 江 大 橋', blx, bly);
             }
             if (currentYear >= 2069) {
                 // ロープウェイ（始点・終点は fixedPos で管理）
@@ -3996,19 +4015,69 @@ h<!DOCTYPE html>
                 ctx.strokeText('ロープウェイ', fixedPos.ropeway_label.x, fixedPos.ropeway_label.y);
                 ctx.fillText('ロープウェイ', fixedPos.ropeway_label.x, fixedPos.ropeway_label.y);
             }
-            if (currentYear >= 2089) {
-                // Marine city
-                ctx.fillStyle = 'rgba(0, 188, 212, 0.3)';
-                ctx.beginPath();
-                ctx.arc(fixedPos.marine_city.x, fixedPos.marine_city.y, 80, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#00BCD4';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                ctx.fillStyle = '#00BCD4';
-                ctx.font = 'bold 12px sans-serif';
+            if (currentYear >= 2061 && (votes['meisui_chan'] || 0) >= 15) {
+                // ══════════════════════════════════════════════
+                // 海上都市 — 丹下健三「東京計画1960」風メガストラクチャー
+                // ※ 2050年までにビーナスめいちゃんに15票以上 → 2061年に出現
+                //   ビーナスにいっぱい票が入ったから、東京湾に海上都市が実現した！
+                // ══════════════════════════════════════════════
+                const mcx = fixedPos.marine_city.x;
+                const mcy = fixedPos.marine_city.y;
+                const spineLen = 240;
+                const spineAngle = -0.12;
+                const cosA = Math.cos(spineAngle);
+                const sinA = Math.sin(spineAngle);
+                const perpX = -sinA;
+                const perpY = cosA;
+                const sx = mcx - spineLen/2 * cosA;
+                const sy = mcy - spineLen/2 * sinA;
+                const ex = mcx + spineLen/2 * cosA;
+                const ey = mcy + spineLen/2 * sinA;
+                const t_anim = (now % 4000) / 4000; // 4秒周期のアニメーション
+
+                ctx.save();
+
+                // ── 海上都市画像の描画 ──
+                if (!window._marineCityImg) {
+                    window._marineCityImg = new Image();
+                    window._marineCityImg.src = '海上都市.png';
+                }
+                const mcImg = window._marineCityImg;
+                if (mcImg.complete && mcImg.naturalWidth > 0) {
+                    // 画像サイズ（MAP上での表示サイズ — ディテールが見えるよう大きめ）
+                    const imgW = 560;
+                    const imgH = imgW * (mcImg.naturalHeight / mcImg.naturalWidth);
+                    ctx.drawImage(mcImg, mcx - imgW / 2, mcy - imgH / 2, imgW, imgH);
+                }
+
+                // ── ラベル「海上都市」 ──
                 ctx.textAlign = 'center';
-                ctx.fillText('海上都市', fixedPos.marine_city.x, fixedPos.marine_city.y + 5);
+                const labelY = mcy + 155;
+                const labelText = '海 上 都 市';
+                ctx.font = 'bold 14px sans-serif';
+                const tw = ctx.measureText(labelText).width;
+                const boxW = tw + 28, boxH = 22;
+                // 背景ボックス
+                const boxGrad = ctx.createLinearGradient(mcx - boxW/2, labelY - 13, mcx + boxW/2, labelY - 13);
+                boxGrad.addColorStop(0, 'rgba(180,200,230,0.6)');
+                boxGrad.addColorStop(0.5, 'rgba(220,235,255,0.75)');
+                boxGrad.addColorStop(1, 'rgba(180,200,230,0.6)');
+                ctx.fillStyle = boxGrad;
+                ctx.beginPath();
+                ctx.roundRect(mcx - boxW/2, labelY - 14, boxW, boxH, 5);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                // テキスト
+                ctx.fillStyle = '#1a2a3a';
+                ctx.fillText(labelText, mcx, labelY);
+                // サブラベル
+                ctx.font = '10px sans-serif';
+                ctx.fillStyle = 'rgba(100,130,170,0.8)';
+                ctx.fillText('Tokyo Bay Mega-Structure', mcx, labelY + 16);
+
+                ctx.restore();
             }
 
             // Draw voting station buildings on the map
@@ -4210,13 +4279,37 @@ h<!DOCTYPE html>
             });
         }
 
-        // デバッグ: 特定キャラに1票追加
+        // デバッグ: くじ引きテスト（全キャラ同票にして裏EDへ）
+        function debugLotteryTest() {
+            const equalVotes = 10;
+            const updates = {};
+            CHAR_TYPES.forEach(t => { updates[t] = equalVotes; });
+            votesRef.set(updates)
+              .then(() => {
+                  console.log('debugLotteryTest: 全キャラ' + equalVotes + '票に設定');
+                  setTimeout(() => {
+                      window.location.href = 'ending-secret.html';
+                  }, 500);
+              })
+              .catch(err => console.error('debugLotteryTest failed:', err));
+        }
+
+        // デバッグ: 特定キャラに投票（裏EDフラグONなら63票）
         function debugVoteChar(charType) {
-            votesRef.transaction(current => {
-                if (!current) current = {};
-                current[charType] = (current[charType] || 0) + 1;
-                return current;
-            }).catch(err => console.error('Debug char vote failed:', err));
+            const isSecretEd = localStorage.getItem('secretEdFlag') === 'true';
+            const addCount = isSecretEd ? 63 : 1;
+            // キャラ単位でトランザクション
+            votesRef.child(charType).transaction(current => (current || 0) + addCount)
+              .then(() => console.log('debugVoteChar OK:', charType, '+' + addCount))
+              .catch(err => console.error('Debug char vote failed:', err));
+            if (isSecretEd) {
+                // フラグクリア＆裏EDへ遷移（DB書き込みを待たず確実に遷移）
+                localStorage.removeItem('secretEdFlag');
+                _updateSecretEdBtn();
+                setTimeout(() => {
+                    window.location.href = 'ending-secret.html';
+                }, 1500);
+            }
         }
 
         // デバッグパネル表示/非表示
@@ -4226,6 +4319,7 @@ h<!DOCTYPE html>
             if (!panel) return;
             _debugPanelVisible = !_debugPanelVisible;
             panel.style.display = _debugPanelVisible ? 'flex' : 'none';
+            if (_debugPanelVisible) _updateSecretEdBtn();
             closeSettings();
         }
 
@@ -4266,7 +4360,7 @@ h<!DOCTYPE html>
                 box-shadow: 0 8px 30px rgba(0,0,0,0.3);
                 z-index: 350;
                 overflow: hidden;
-                animation: popScale 0.3s ease;
+                animation: popScale 0.3s var(--ease-spring-bouncy);
                 font-family: 'BIZ UDGothic','Yu Gothic UI','Hiragino Sans','Meiryo',sans-serif;
             `;
 
@@ -4830,23 +4924,6 @@ h<!DOCTYPE html>
             endingActive = true;
             console.log('🎆 ENDING START WL:', getWorldLine());
 
-            // ★ 裏エンディング判定：1キャラが全投票の80%以上を占めた場合
-            const cycleV = {};
-            let cycleTotal = 0;
-            CHAR_TYPES.forEach(t => {
-                cycleV[t] = Math.max(0, (votes[t] || 0) - (cycleStartPerChar[t] || 0));
-                cycleTotal += cycleV[t];
-            });
-            if (cycleTotal > 0) {
-                const maxChar = CHAR_TYPES.reduce((a, b) => cycleV[a] >= cycleV[b] ? a : b);
-                const ratio = cycleV[maxChar] / cycleTotal;
-                if (ratio >= 0.8) {
-                    console.log('🌟 裏エンディング発動！', maxChar, Math.round(ratio * 100) + '%');
-                    // 裏エンディングページへ遷移
-                    window.open('ending-credits.html', '_blank');
-                }
-            }
-
             // 旧EDタイマーを全キャンセル＋旧オーバーレイ要素を削除
             _edTimers.forEach(id => clearTimeout(id));
             _edTimers.length = 0;
@@ -4914,22 +4991,149 @@ h<!DOCTYPE html>
             }, 4000));
         }
 
+        // ── くじ引き演出（同票1位が2キャラ以上の場合）──
+        function _showLotteryOverlay(candidates) {
+            return new Promise(resolve => {
+                const winnerId = candidates[Math.floor(Math.random() * candidates.length)];
+
+                const overlay = document.createElement('div');
+                overlay.className = 'ed-overlay';
+                overlay.style.cssText = `position:fixed;inset:0;z-index:8300;
+                    display:flex;flex-direction:column;align-items:center;justify-content:center;
+                    background:rgba(0,0,20,0.88);
+                    font-family:'BIZ UDGothic','Yu Gothic UI','Hiragino Sans','Meiryo',sans-serif;
+                    animation:fadeInUp 0.6s ease forwards;`;
+
+                // タイトル
+                const title = document.createElement('div');
+                title.style.cssText = `font-size:36px;font-weight:900;color:#ffd700;letter-spacing:6px;
+                    margin-bottom:30px;text-shadow:0 0 20px rgba(255,215,0,0.5);`;
+                title.textContent = '�� 同票につき くじ引き！';
+                overlay.appendChild(title);
+
+                // 同票キャラ一覧
+                const row = document.createElement('div');
+                row.style.cssText = `display:flex;gap:24px;margin-bottom:36px;align-items:center;`;
+                candidates.forEach(id => {
+                    const wrap = document.createElement('div');
+                    wrap.style.cssText = `text-align:center;`;
+                    const circle = document.createElement('div');
+                    const meta = charMetadata[id] || {};
+                    circle.style.cssText = `width:80px;height:80px;border-radius:50%;
+                        border:3px solid ${meta.color || '#fff'}40;
+                        background:rgba(255,255,255,0.06);overflow:hidden;
+                        display:flex;align-items:center;justify-content:center;margin-bottom:8px;`;
+                    const img = charImages[id];
+                    if (img && img.src) {
+                        const imgEl = document.createElement('img');
+                        imgEl.src = img.src;
+                        imgEl.style.cssText = `width:70%;height:70%;object-fit:contain;`;
+                        circle.appendChild(imgEl);
+                    }
+                    wrap.appendChild(circle);
+                    const name = document.createElement('div');
+                    name.style.cssText = `font-size:14px;color:${meta.color || '#fff'};`;
+                    name.textContent = meta.name || id;
+                    wrap.appendChild(name);
+                    row.appendChild(wrap);
+                });
+                overlay.appendChild(row);
+
+                // スロット枠
+                const slotFrame = document.createElement('div');
+                slotFrame.style.cssText = `width:160px;height:160px;border:4px solid #ffd700;
+                    border-radius:50%;background:rgba(255,255,255,0.04);
+                    display:flex;align-items:center;justify-content:center;overflow:hidden;
+                    box-shadow:0 0 40px rgba(255,215,0,0.15),inset 0 0 30px rgba(0,0,0,0.3);`;
+                const slotImg = document.createElement('img');
+                slotImg.style.cssText = `width:70%;height:70%;object-fit:contain;`;
+                slotFrame.appendChild(slotImg);
+                overlay.appendChild(slotFrame);
+
+                // 結果テキスト
+                const resultText = document.createElement('div');
+                resultText.style.cssText = `margin-top:30px;font-size:32px;font-weight:900;
+                    color:#ffd700;letter-spacing:4px;opacity:0;transition:opacity 0.6s;
+                    text-shadow:0 0 20px rgba(255,215,0,0.5);`;
+                overlay.appendChild(resultText);
+
+                document.body.appendChild(overlay);
+
+                // スロットアニメーション
+                let spinIdx = 0;
+                let interval = 80;
+                const totalDuration = 3500;
+                const startT = Date.now();
+
+                function spin() {
+                    const elapsed = Date.now() - startT;
+                    const id = candidates[spinIdx % candidates.length];
+                    const src = charImages[id];
+                    if (src && src.src) slotImg.src = src.src;
+                    spinIdx++;
+
+                    if (elapsed < totalDuration) {
+                        const progress = elapsed / totalDuration;
+                        interval = 80 + progress * progress * 400;
+                        setTimeout(spin, interval);
+                    } else {
+                        // 当選者確定
+                        const winSrc = charImages[winnerId];
+                        if (winSrc && winSrc.src) slotImg.src = winSrc.src;
+                        const winMeta = charMetadata[winnerId] || {};
+                        slotFrame.style.borderColor = winMeta.color || '#ffd700';
+                        slotFrame.style.boxShadow = `0 0 60px ${winMeta.color || '#ffd700'}80,inset 0 0 30px rgba(0,0,0,0.2)`;
+
+                        resultText.textContent = `👑 ${winMeta.name || winnerId}`;
+                        resultText.style.color = winMeta.color || '#ffd700';
+                        setTimeout(() => { resultText.style.opacity = '1'; }, 300);
+
+                        // 2.5秒見せてからフェードアウト
+                        setTimeout(() => {
+                            overlay.style.transition = 'opacity 0.8s';
+                            overlay.style.opacity = '0';
+                            setTimeout(() => {
+                                overlay.remove();
+                                resolve(winnerId);
+                            }, 800);
+                        }, 2500);
+                    }
+                }
+
+                // 1秒待ってからスロット開始
+                setTimeout(spin, 1000);
+            });
+        }
+
         // ── エンディングマップツアー ──
-        function _startEndingTour() {
+        async function _startEndingTour() {
             // この世界線の各キャラ得票数
             const cycleVotes = {};
             CHAR_TYPES.forEach(t => {
                 cycleVotes[t] = Math.max(0, (votes[t] || 0) - (cycleStartPerChar[t] || 0));
             });
-            // 最多得票キャラを確定
-            const dominant = CHAR_TYPES.reduce((a, b) => cycleVotes[a] >= cycleVotes[b] ? a : b);
 
-            // ツアー巡回スポット（focusX/Y はマップ座標、zoom は倍率）
+            // 最多得票キャラを確定（同票ならくじ引き）
+            const maxV = Math.max(...CHAR_TYPES.map(t => cycleVotes[t]));
+            const tiedChars = CHAR_TYPES.filter(t => cycleVotes[t] === maxV && maxV > 0);
+            let dominant;
+            if (tiedChars.length >= 2) {
+                // 同票 → くじ引き演出
+                dominant = await _showLotteryOverlay(tiedChars);
+            } else {
+                dominant = tiedChars[0] || CHAR_TYPES.reduce((a, b) => cycleVotes[a] >= cycleVotes[b] ? a : b);
+            }
+
+            // ツアー巡回スポット（左から右へ自然に流��る順）
             const tourStops = [
                 { x: 1396, y: 778, zoom: 1.6,
                   label: '2100年の浦安全体',
                   sub:  'みんなの投票でできた未来の街',
                   color: '#ffd700' },
+                { x: 870, y: 417, zoom: 2.8,
+                  label: charMetadata.ryoushi?.name + 'エリア',
+                  sub:  '漁港とにぎわいの街',
+                  color: charMetadata.ryoushi?.color || '#66bb6a' },
                 { x: 1020, y: 303, zoom: 2.8,
                   label: charMetadata.meisui?.name + 'エリア',
                   sub:  'イチョウ並木と緑の街',
@@ -4938,10 +5142,6 @@ h<!DOCTYPE html>
                   label: charMetadata.meisui_chan?.name + 'エリア',
                   sub:  'ビーチと観光の街',
                   color: charMetadata.meisui_chan?.color || '#ff6b6b' },
-                { x: 870, y: 417, zoom: 2.8,
-                  label: charMetadata.ryoushi?.name + 'エリア',
-                  sub:  '漁港とにぎわいの街',
-                  color: charMetadata.ryoushi?.color || '#66bb6a' },
                 { x: 1499, y: 510, zoom: 2.6,
                   label: charMetadata.bekabune?.name + 'エリア',
                   sub:  '三番瀬と海の恵み',
@@ -5439,14 +5639,14 @@ h<!DOCTYPE html>
 
             // Step 3: Diagonal slash line
             const slash = document.createElement('div');
-            slash.style.cssText = `position:absolute;top:0;left:-50%;width:200%;height:8px;background:${charColor};z-index:3;transform:rotate(-30deg);transform-origin:center;top:45%;animation:cutinSlash 0.3s 0.15s both;box-shadow:0 0 30px ${charColor},0 0 60px ${charColor};`;
+            slash.style.cssText = `position:absolute;top:0;left:-50%;width:200%;height:8px;background:${charColor};z-index:3;transform:rotate(-30deg);transform-origin:center;top:45%;animation:cutinSlash 0.3s 0.15s var(--ease-spring-bouncy) both;box-shadow:0 0 30px ${charColor},0 0 60px ${charColor};`;
             overlay.appendChild(slash);
 
             // Step 4: Character image (huge, enters from right)
             if (charImg && charImg.complete) {
                 const img = document.createElement('img');
                 img.src = charImg.src;
-                img.style.cssText = 'position:absolute;right:-800px;top:10%;transform:translateY(0);width:800px;height:auto;z-index:4;opacity:0;filter:drop-shadow(0 0 60px ' + charColor + ') drop-shadow(0 0 120px ' + charColor + ') drop-shadow(0 0 200px white);animation:cutinCharSlide 0.4s 0.2s cubic-bezier(0.16,1,0.3,1) forwards, cutinCharKira 0.6s ease-in-out infinite alternate;';
+                img.style.cssText = 'position:absolute;right:-800px;top:10%;transform:translateY(0);width:800px;height:auto;z-index:4;opacity:0;filter:drop-shadow(0 0 60px ' + charColor + ') drop-shadow(0 0 120px ' + charColor + ') drop-shadow(0 0 200px white);animation:cutinCharSlide 0.4s 0.2s cubic-bezier(0.16,1,0.3,1) forwards, cutinCharKira 0.6s var(--ease-spring-gentle) infinite alternate;';
                 overlay.appendChild(img);
             }
 
@@ -5462,7 +5662,7 @@ h<!DOCTYPE html>
             const idiom = cutinIdioms[charType] || { kanji: '一票投入', ruby: 'ワン・ボート', desc: '投票している！' };
 
             const textDiv = document.createElement('div');
-            textDiv.style.cssText = `position:absolute;left:5%;top:20%;z-index:5;transform:rotate(-8deg);opacity:0;animation:cutinTextPop 0.4s 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;`;
+            textDiv.style.cssText = `position:absolute;left:5%;top:20%;z-index:5;transform:rotate(-8deg);opacity:0;animation:cutinTextPop 0.4s 0.35s var(--ease-spring-bouncy) forwards;`;
             textDiv.innerHTML = `<div style="font-size:38px;font-weight:bold;color:white;letter-spacing:8px;text-shadow:0 0 20px ${charColor},0 0 40px ${charColor},2px 2px 0 #000;margin-bottom:28px;">${idiom.ruby}</div><div style="font-size:110px;font-weight:900;color:${charColor};text-shadow:5px 5px 0 #000,-3px -3px 0 #000,3px -3px 0 #000,-3px 3px 0 #000,0 0 50px ${charColor},0 0 80px ${charColor};letter-spacing:22px;margin-bottom:32px;">${idiom.kanji}</div><div style="font-size:34px;font-weight:bold;color:white;text-shadow:2px 2px 0 #000,0 0 15px ${charColor};letter-spacing:3px;">${idiom.desc}</div>`;
             overlay.appendChild(textDiv);
 
@@ -5478,7 +5678,7 @@ h<!DOCTYPE html>
                 const sy = Math.random() * 100;
                 const delay = 0.3 + Math.random() * 1.5;
                 const size = 8 + Math.random() * 16;
-                sparkle.style.cssText = `position:absolute;left:${sx}%;top:${sy}%;width:${size}px;height:${size}px;z-index:7;pointer-events:none;opacity:0;animation:cutinSparkle 0.8s ${delay}s ease-in-out both;`;
+                sparkle.style.cssText = `position:absolute;left:${sx}%;top:${sy}%;width:${size}px;height:${size}px;z-index:7;pointer-events:none;opacity:0;animation:cutinSparkle 0.8s ${delay}s var(--ease-spring) both;`;
                 sparkle.textContent = '✦';
                 sparkle.style.color = i % 3 === 0 ? 'white' : charColor;
                 sparkle.style.fontSize = size + 'px';
@@ -5716,6 +5916,8 @@ h<!DOCTYPE html>
             if (slider) slider.value = Math.round(vol * 100);
             const label = document.getElementById('volumeLabel');
             if (label) label.textContent = Math.round(vol * 100) + '%';
+            // 裏EDボタンの状態復元
+            _updateSecretEdBtn();
             s.style.display = 'flex';
             // reflow を挟んでトランジションを確実に起動
             s.getBoundingClientRect();
@@ -5727,6 +5929,32 @@ h<!DOCTYPE html>
             if (!s) return;
             s.style.transform = 'translateX(100%)';
             setTimeout(() => { s.style.display = 'none'; }, 340);
+        }
+
+        // 裏EDフラグの切り替え（localStorageで共有）
+        function toggleSecretEd() {
+            const isOn = localStorage.getItem('secretEdFlag') === 'true';
+            if (isOn) {
+                localStorage.removeItem('secretEdFlag');
+            } else {
+                localStorage.setItem('secretEdFlag', 'true');
+            }
+            _updateSecretEdBtn();
+        }
+        function _updateSecretEdBtn() {
+            const btn = document.getElementById('secretEdToggleBtn');
+            const hint = document.getElementById('secretEdHint');
+            if (!btn) return;
+            const isOn = localStorage.getItem('secretEdFlag') === 'true';
+            btn.textContent = isOn ? '🔮 裏ED：🟢 ON — スタンバイ中' : '📖 裏ED：OFF';
+            btn.style.background = isOn ? 'linear-gradient(135deg,#7b1fa2,#e040fb)' : '#333';
+            btn.style.color = isOn ? '#fff' : '#666';
+            btn.style.border = isOn ? '3px solid #e040fb' : '3px solid #555';
+            btn.style.boxShadow = isOn ? '0 0 12px rgba(224,64,251,0.5)' : 'none';
+            if (hint) {
+                hint.textContent = isOn ? '⚠️ 次のキャラ投票で63票＋裏EDへ遷移します' : 'ONで次のキャラ投票に63票→裏ED突入';
+                hint.style.color = isOn ? '#e040fb' : '#888';
+            }
         }
 
         // ステータスバーの時計を毎分更新

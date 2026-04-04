@@ -4,10 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>浦安ご当地めいすいくん人気投票選挙</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
+
+  <!-- デザインシステム -->
+  <link rel="stylesheet" href="css/design-system.css">
+
+  <!-- キャラクターデータ（画像含む） -->
+  <script src="js/config.js"></script>
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
   <style>
-    * {
+    /* ============================================
+       display.html 専用スタイル
+       55インチモニター向け シネマティックUI
+       ============================================ */
+
+    /* --- リセット・ベース --- */
+    *, *::before, *::after {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
@@ -20,312 +40,586 @@
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-      display: flex;
-      color: #333;
+      font-family: var(--font-sans);
+      color: var(--color-text-light);
       position: relative;
+      background: #0F0F23;
     }
 
-    /* Animated background elements */
-    .background-animation {
+    /* --- アニメーション背景（深い紺〜紫グラデーション） --- */
+    .bg-animated {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
       z-index: 0;
+      background: linear-gradient(
+        135deg,
+        #0F0F23 0%,
+        #1B1040 20%,
+        #0F1B3E 40%,
+        #251050 60%,
+        #0F1628 80%,
+        #1B0A30 100%
+      );
+      background-size: 400% 400%;
+      animation: bg-shift 30s ease-in-out infinite;
+    }
+
+    @keyframes bg-shift {
+      0%   { background-position: 0% 50%; }
+      25%  { background-position: 100% 0%; }
+      50%  { background-position: 100% 100%; }
+      75%  { background-position: 0% 100%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* 背景オーバーレイ（放射状の光） */
+    .bg-radial {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 50% at 80% 40%, rgba(168, 85, 247, 0.10) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 50% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
       pointer-events: none;
     }
 
-    .cloud {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 100px;
-      opacity: 0.6;
-    }
-
-    .cloud1 {
-      width: 200px;
-      height: 80px;
-      top: 10%;
-      animation: float 20s infinite ease-in-out;
-    }
-
-    .cloud2 {
-      width: 150px;
-      height: 60px;
-      top: 20%;
-      animation: float 25s infinite ease-in-out reverse;
-      animation-delay: 5s;
-    }
-
-    .cloud3 {
-      width: 180px;
-      height: 70px;
-      top: 70%;
-      animation: float 22s infinite ease-in-out;
-      animation-delay: 10s;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateX(0px); }
-      50% { transform: translateX(50px); }
-    }
-
-    .particle {
-      position: absolute;
+    /* パーティクル格納 */
+    .particle-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
       pointer-events: none;
+      overflow: hidden;
     }
+
+    /* 桜の花びら */
+    .particle { position: absolute; pointer-events: none; }
 
     .blossom {
-      animation: fall 8s infinite linear;
+      animation: blossom-fall linear infinite;
+      will-change: transform;
     }
 
-    @keyframes fall {
-      to {
-        transform: translateY(100vh) rotateZ(360deg);
+    @keyframes blossom-fall {
+      0% {
+        transform: translateY(-5vh) rotate(0deg) translateX(0);
+        opacity: 0.9;
+      }
+      25% { transform: translateY(25vh) rotate(90deg) translateX(30px); }
+      50% { transform: translateY(50vh) rotate(180deg) translateX(-20px); }
+      75% { transform: translateY(75vh) rotate(270deg) translateX(25px); }
+      100% {
+        transform: translateY(105vh) rotate(360deg) translateX(-10px);
         opacity: 0;
       }
     }
 
-    .day-night-overlay {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      animation: dayNightCycle 30s infinite;
-    }
-
-    @keyframes dayNightCycle {
-      0%, 100% { background: rgba(255, 200, 100, 0.1); }
-      50% { background: rgba(100, 150, 255, 0.2); }
-    }
-
-    /* Main layout */
+    /* --- メインレイアウト --- */
     .container {
       width: 100%;
       height: 100%;
       display: flex;
       flex-direction: column;
       position: relative;
-      z-index: 1;
+      z-index: 2;
     }
 
+    /* --- タイトルバー（グラスモーフィズム） --- */
     .title-bar {
-      background: rgba(0, 0, 0, 0.3);
-      color: white;
-      padding: 20px 40px;
+      position: relative;
+      background: rgba(15, 15, 40, 0.6);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 18px 60px;
       text-align: center;
-      font-size: 2.5em;
-      font-weight: bold;
-      backdrop-filter: blur(10px);
-      border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
     }
 
+    .title-bar::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(202, 138, 4, 0.4), rgba(255, 215, 0, 0.3), rgba(202, 138, 4, 0.4), transparent);
+    }
+
+    .title-icon {
+      font-size: 2.2em;
+      filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.4));
+    }
+
+    .title-text {
+      font-family: var(--font-serif);
+      font-size: 2.4em;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      background: linear-gradient(135deg, #e0e7ff, #ffffff, #c4b5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+      filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.3));
+    }
+
+    /* --- コンテンツ（左70% + 右30%） --- */
     .content {
       display: flex;
       flex: 1;
       overflow: hidden;
     }
 
+    /* --- 左パネル：キャラクターワールド --- */
     .world-map {
       width: 70%;
       position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       overflow: hidden;
-      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+    }
+
+    /* 左パネル背景グロー */
+    .world-map::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+      pointer-events: none;
     }
 
     .character-world {
       position: relative;
       width: 100%;
       height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
+    /* キャラクターアイコン（実画像版） */
     .character-icon {
       position: absolute;
-      font-size: 4em;
-      cursor: pointer;
-      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-      animation: float-char 6s ease-in-out infinite;
-    }
-
-    @keyframes float-char {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-20px); }
-    }
-
-    .results-panel {
-      width: 30%;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 30px 25px;
-      overflow-y: auto;
-      border-left: 3px solid rgba(0, 0, 0, 0.1);
+      cursor: default;
+      z-index: 3;
+      transition: transform var(--duration-slow) var(--ease-spring);
+      animation: char-float 6s ease-in-out infinite;
       display: flex;
       flex-direction: column;
+      align-items: center;
     }
 
-    .results-title {
+    /* キャラクター画像 */
+    .character-icon .char-img {
+      width: 180px;
+      height: 180px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.4));
+      pointer-events: none;
+    }
+
+    /* キャラ名ラベル */
+    .character-icon .char-label {
+      margin-top: 8px;
+      font-size: 0.95em;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      white-space: nowrap;
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+      letter-spacing: 0.04em;
+    }
+
+    /* キャラグロー（キャラカラーは JS で設定） */
+    .character-icon .char-glow {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      filter: blur(40px);
+      opacity: 0.4;
+      z-index: -1;
+      animation: glow-pulse 4s ease-in-out infinite;
+    }
+
+    /* ランキング内のキャラ画像サムネイル */
+    .rank-thumb {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      margin-right: 10px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    @keyframes char-float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-22px); }
+    }
+
+    @keyframes glow-pulse {
+      0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.55; transform: translate(-50%, -50%) scale(1.2); }
+    }
+
+    /* 投票パーティクル */
+    .vote-particle {
+      position: absolute;
+      pointer-events: none;
       font-size: 1.6em;
-      font-weight: bold;
-      color: #333;
-      margin-bottom: 20px;
-      text-align: center;
-      border-bottom: 2px solid #667eea;
-      padding-bottom: 15px;
+      z-index: 10;
+      animation: vote-burst 1.2s var(--ease-spring-bouncy) forwards;
     }
 
+    @keyframes vote-burst {
+      0% { transform: scale(0.5) translateY(0); opacity: 1; }
+      100% { transform: scale(1.5) translateY(-80px); opacity: 0; }
+    }
+
+    /* --- 右パネル（グラスモーフィズム） --- */
+    .results-panel {
+      width: 30%;
+      background: rgba(12, 12, 30, 0.6);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 24px 22px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* スクロールバー（暗色） */
+    .results-panel::-webkit-scrollbar { width: 6px; }
+    .results-panel::-webkit-scrollbar-track { background: transparent; }
+    .results-panel::-webkit-scrollbar-thumb {
+      background: rgba(168, 85, 247, 0.3);
+      border-radius: var(--radius-full);
+    }
+
+    /* --- セクションタイトル --- */
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: 1.4em;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.92);
+      text-align: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      letter-spacing: 0.04em;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+    }
+
+    /* --- ランキングアイテム --- */
     .ranking-item {
-      margin-bottom: 15px;
-      padding: 12px;
-      background: #f5f5f5;
-      border-radius: 8px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      transition: all 0.3s;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.35s var(--ease-spring-gentle);
+      position: relative;
+      overflow: hidden;
     }
 
+    .ranking-item::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.35s;
+    }
+
+    .ranking-item:nth-child(1) {
+      background: rgba(255, 215, 0, 0.08);
+      border-color: rgba(255, 215, 0, 0.15);
+    }
+
+    .ranking-item:nth-child(2) {
+      background: rgba(192, 192, 192, 0.06);
+      border-color: rgba(192, 192, 192, 0.12);
+    }
+
+    .ranking-item:nth-child(3) {
+      background: rgba(205, 127, 50, 0.06);
+      border-color: rgba(205, 127, 50, 0.12);
+    }
+
+    /* 投票フラッシュアニメーション */
     .ranking-item.voted {
-      animation: rankingFlash 0.5s ease-out;
+      animation: rank-flash 0.7s var(--ease-spring-bouncy);
     }
 
-    @keyframes rankingFlash {
-      0% { background: #fff9e6; transform: scale(1.02); }
-      100% { background: #f5f5f5; transform: scale(1); }
+    @keyframes rank-flash {
+      0% {
+        background: rgba(168, 85, 247, 0.25);
+        transform: scale(1.03);
+        box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: none;
+      }
     }
 
     .ranking-left {
       display: flex;
       align-items: center;
       flex: 1;
+      min-width: 0;
     }
 
     .rank-medal {
-      font-size: 1.8em;
+      font-size: 2em;
       margin-right: 12px;
-      width: 40px;
+      width: 52px;
       text-align: center;
+      flex-shrink: 0;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+    }
+
+    /* 1位のメダルは輝きアニメーション */
+    .ranking-item:first-child .rank-medal {
+      animation: medal-shine 3s ease-in-out infinite;
+    }
+
+    @keyframes medal-shine {
+      0%, 100% { filter: drop-shadow(0 2px 6px rgba(255, 215, 0, 0.4)); }
+      50% { filter: drop-shadow(0 2px 16px rgba(255, 215, 0, 0.8)) brightness(1.1); }
     }
 
     .rank-name {
-      font-size: 0.95em;
+      font-size: 1em;
       font-weight: 600;
-      color: #333;
-      flex: 1;
+      color: rgba(255, 255, 255, 0.88);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .rank-count {
-      font-size: 1.2em;
-      font-weight: bold;
-      color: #667eea;
-      min-width: 50px;
+      font-size: 1.35em;
+      font-weight: 900;
+      min-width: 48px;
       text-align: right;
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+      background: linear-gradient(135deg, #c4b5fd, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
+    .ranking-item:first-child .rank-count {
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* --- 棒グラフ --- */
     .bar-chart {
-      margin: 20px 0;
-      padding: 15px;
-      background: #f9f9f9;
-      border-radius: 8px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    .bar-item {
-      margin-bottom: 10px;
-    }
+    .bar-item { margin-bottom: 10px; }
+    .bar-item:last-child { margin-bottom: 0; }
 
     .bar-label {
-      font-size: 0.85em;
-      color: #666;
+      font-size: 0.82em;
+      color: rgba(255, 255, 255, 0.6);
       margin-bottom: 4px;
       display: flex;
       justify-content: space-between;
     }
 
+    .bar-label-percent {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
     .bar {
       width: 100%;
-      height: 20px;
-      background: #e0e0e0;
-      border-radius: 10px;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-full);
       overflow: hidden;
+      position: relative;
     }
 
     .bar-fill {
       height: 100%;
-      transition: width 0.3s ease-out;
-      border-radius: 10px;
+      border-radius: var(--radius-full);
+      transition: width 0.6s var(--ease-out);
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      padding-right: 8px;
-      color: white;
-      font-size: 0.75em;
-      font-weight: bold;
+      padding-right: 10px;
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 0.72em;
+      font-weight: 700;
+      position: relative;
+      overflow: hidden;
     }
 
-    .bar-fill.meisui { background: linear-gradient(90deg, #ffd700, #ffed4e); }
-    .bar-fill.tsutsuji { background: linear-gradient(90deg, #e040fb, #f06ecd); }
-    .bar-fill.meisui_chan { background: linear-gradient(90deg, #ff6b6b, #ff8787); }
-    .bar-fill.bekabune { background: linear-gradient(90deg, #42a5f5, #64b5f6); }
-    .bar-fill.asari { background: linear-gradient(90deg, #ff8a65, #ffab91); }
-    .bar-fill.ryoushi { background: linear-gradient(90deg, #66bb6a, #81c784); }
+    /* バーの輝きエフェクト */
+    .bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+      animation: bar-shimmer 3s ease-in-out infinite;
+    }
 
+    @keyframes bar-shimmer {
+      0% { left: -50%; }
+      100% { left: 150%; }
+    }
+
+    /* キャラクター別カラー（グラデーション） */
+    .bar-fill.meisui      { background: linear-gradient(90deg, #b8960a, #ffd700, #ffed4e); }
+    .bar-fill.tsutsuji    { background: linear-gradient(90deg, #9c27b0, #e040fb, #f48fb1); }
+    .bar-fill.meisui_chan  { background: linear-gradient(90deg, #c62828, #ff6b6b, #ff8a80); }
+    .bar-fill.bekabune    { background: linear-gradient(90deg, #1565c0, #42a5f5, #90caf9); }
+    .bar-fill.asari       { background: linear-gradient(90deg, #d84315, #ff8a65, #ffccbc); }
+    .bar-fill.ryoushi     { background: linear-gradient(90deg, #2e7d32, #66bb6a, #a5d6a7); }
+
+    /* --- 統計セクション --- */
     .stats-section {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f9f9f9;
-      border-radius: 8px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .stat-row {
       display: flex;
       justify-content: space-between;
+      align-items: baseline;
       margin-bottom: 10px;
-      align-items: center;
     }
+
+    .stat-row:last-child { margin-bottom: 0; }
 
     .stat-label {
       font-size: 0.9em;
-      color: #666;
-      font-weight: 600;
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 500;
     }
 
     .stat-value {
-      font-size: 1.3em;
-      font-weight: bold;
-      color: #667eea;
+      font-size: 1.8em;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
+    /* --- 町ランクバッジ --- */
     .town-rank {
-      margin-top: 15px;
-      padding: 12px;
-      border-radius: 8px;
+      padding: 14px;
+      border-radius: var(--radius-md);
       text-align: center;
-      font-weight: bold;
+      font-weight: 900;
+      font-size: 1.2em;
       color: white;
-      font-size: 1.1em;
+      letter-spacing: 0.08em;
+      position: relative;
+      overflow: hidden;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
-    .town-rank.rank-s { background: linear-gradient(135deg, #ffb300, #ff7e00); }
-    .town-rank.rank-a { background: linear-gradient(135deg, #ff6b6b, #ff5252); }
-    .town-rank.rank-b { background: linear-gradient(135deg, #667eea, #5e35b1); }
-    .town-rank.rank-c { background: linear-gradient(135deg, #42a5f5, #2196f3); }
-    .town-rank.rank-d { background: linear-gradient(135deg, #66bb6a, #43a047); }
-    .town-rank.rank-e { background: linear-gradient(135deg, #ab47bc, #8e24aa); }
-    .town-rank.rank-f { background: linear-gradient(135deg, #9e9e9e, #757575); }
+    /* ランク別グラデーション */
+    .town-rank.rank-s {
+      background: linear-gradient(135deg, #ff8f00, #ffb300, #ffe082);
+      box-shadow: 0 0 24px rgba(255, 179, 0, 0.3);
+      animation: rank-glow 2s ease-in-out infinite;
+    }
+    .town-rank.rank-a {
+      background: linear-gradient(135deg, #c62828, #ff5252, #ff8a80);
+      box-shadow: 0 0 20px rgba(255, 82, 82, 0.25);
+    }
+    .town-rank.rank-b {
+      background: linear-gradient(135deg, #4527a0, #7c4dff, #b388ff);
+      box-shadow: 0 0 20px rgba(124, 77, 255, 0.25);
+    }
+    .town-rank.rank-c {
+      background: linear-gradient(135deg, #1565c0, #42a5f5, #90caf9);
+      box-shadow: 0 0 16px rgba(66, 165, 245, 0.2);
+    }
+    .town-rank.rank-d {
+      background: linear-gradient(135deg, #2e7d32, #66bb6a, #a5d6a7);
+      box-shadow: 0 0 16px rgba(102, 187, 106, 0.2);
+    }
+    .town-rank.rank-e {
+      background: linear-gradient(135deg, #6a1b9a, #ab47bc, #ce93d8);
+      box-shadow: 0 0 16px rgba(171, 71, 188, 0.2);
+    }
+    .town-rank.rank-f {
+      background: linear-gradient(135deg, #424242, #757575, #bdbdbd);
+    }
 
+    @keyframes rank-glow {
+      0%, 100% { box-shadow: 0 0 24px rgba(255, 179, 0, 0.3); }
+      50% { box-shadow: 0 0 40px rgba(255, 179, 0, 0.5); }
+    }
+
+    /* ランクバッジのシマー */
+    .town-rank::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+      animation: badge-shimmer 4s ease-in-out infinite;
+    }
+
+    @keyframes badge-shimmer {
+      0% { left: -60%; }
+      100% { left: 160%; }
+    }
+
+    /* --- 世界線表示 --- */
+    .world-line-display {
+      padding: 10px 14px;
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.15);
+      border-radius: var(--radius-md);
+      text-align: center;
+      font-size: 0.95em;
+      font-weight: 700;
+      color: var(--color-primary-light);
+      letter-spacing: 0.04em;
+    }
+
+    /* --- 接続ステータス --- */
     .connection-status {
       margin-top: auto;
-      padding: 10px;
+      padding: 10px 0 0;
       text-align: center;
-      border-top: 1px solid #ddd;
-      font-size: 0.85em;
-      color: #666;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.82em;
+      color: rgba(255, 255, 255, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .status-dot {
@@ -333,96 +627,127 @@
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      margin-right: 6px;
-      animation: pulse 1.5s infinite;
+      flex-shrink: 0;
     }
 
     .status-dot.connected {
-      background: #4caf50;
+      background: var(--color-success);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+      animation: status-pulse 2s ease-in-out infinite;
     }
 
     .status-dot.disconnected {
-      background: #f44336;
+      background: #ef4444;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
       animation: none;
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+    @keyframes status-pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+      50% { opacity: 0.6; box-shadow: 0 0 4px rgba(16, 185, 129, 0.3); }
     }
 
+    /* --- フルスクリーンボタン --- */
     .fullscreen-btn {
       position: fixed;
-      top: 20px;
-      right: 20px;
+      top: 16px;
+      right: 16px;
       z-index: 100;
-      background: rgba(0, 0, 0, 0.6);
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 8px;
+      background: rgba(15, 15, 40, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
       cursor: pointer;
-      font-size: 0.9em;
-      transition: all 0.2s;
+      font-size: 0.85em;
+      font-family: var(--font-sans);
+      font-weight: 500;
+      transition: all 0.25s var(--ease-out);
+      letter-spacing: 0.02em;
     }
 
     .fullscreen-btn:hover {
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(99, 102, 241, 0.3);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #fff;
     }
 
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: rgba(102, 126, 234, 0.5);
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(102, 126, 234, 0.8);
-    }
-
-    /* Large screen (55" monitor etc.) — scale up text and spacing */
+    /* --- 大画面対応（55インチモニター） --- */
     @media (min-width: 1920px) {
-      .title-bar { font-size: 3.5em; padding: 30px 60px; }
-      .results-title { font-size: 2.2em; }
-      .ranking-item { padding: 18px; margin-bottom: 20px; }
-      .rank-medal { font-size: 2.5em; }
-      .rank-name { font-size: 1.3em; }
-      .rank-count { font-size: 1.6em; }
-      .bar-label { font-size: 1.1em; }
+      .title-bar { padding: 24px 80px; }
+      .title-text { font-size: 3.2em; }
+      .title-icon { font-size: 2.8em; }
+
+      .section-title { font-size: 1.8em; }
+
+      .ranking-item { padding: 16px 18px; }
+      .rank-medal { font-size: 2.6em; width: 64px; }
+      .rank-name { font-size: 1.25em; }
+      .rank-count { font-size: 1.7em; }
+
+      .bar-label { font-size: 1em; }
       .bar { height: 28px; }
-      .stat-value { font-size: 1.8em; }
-      .character-icon { font-size: 5.5em; }
+      .bar-fill { font-size: 0.82em; }
+
+      .stat-label { font-size: 1.05em; }
+      .stat-value { font-size: 2.4em; }
+
+      .town-rank { font-size: 1.5em; padding: 18px; }
+
+      .character-icon .char-img { width: 260px; height: 260px; }
+      .character-icon .char-label { font-size: 1.15em; }
+      .character-icon .char-glow { width: 220px; height: 220px; }
+      .rank-thumb { width: 52px; height: 52px; }
+
+      .results-panel { padding: 30px 28px; gap: 20px; }
+      .world-line-display { font-size: 1.1em; }
+    }
+
+    /* 4Kディスプレイ */
+    @media (min-width: 3000px) {
+      .title-text { font-size: 4em; }
+      .character-icon .char-img { width: 340px; height: 340px; }
+      .rank-medal { font-size: 3.2em; }
+      .stat-value { font-size: 3em; }
     }
   </style>
 </head>
 <body>
-  <div class="background-animation" id="bgAnimation">
-    <div class="cloud cloud1"></div>
-    <div class="cloud cloud2"></div>
-    <div class="cloud cloud3"></div>
-    <div class="day-night-overlay"></div>
-  </div>
 
-  <button class="fullscreen-btn" id="fullscreenBtn" title="フルスクリーン表示">⛶ フルスクリーン</button>
+  <!-- アニメーション背景 -->
+  <div class="bg-animated"></div>
+  <div class="bg-radial"></div>
 
+  <!-- パーティクルレイヤー（桜の花びらなど） -->
+  <div class="particle-layer" id="bgAnimation"></div>
+
+  <!-- フルスクリーンボタン -->
+  <button class="fullscreen-btn" id="fullscreenBtn" title="フルスクリーン表示">&#x26F6; フルスクリーン</button>
+
+  <!-- メインコンテナ -->
   <div class="container">
-    <div class="title-bar">🗳️ 浦安ご当地めいすいくん人気投票選挙 🌏</div>
 
+    <!-- タイトルバー -->
+    <div class="title-bar">
+      <span class="title-icon">&#x1F5F3;&#xFE0F;</span>
+      <span class="title-text">浦安ご当地めいすいくん人気投票選挙</span>
+      <span class="title-icon">&#x1F30F;</span>
+    </div>
+
+    <!-- コンテンツ -->
     <div class="content">
+
+      <!-- 左パネル：キャラクターワールド -->
       <div class="world-map">
         <div class="character-world" id="characterWorld"></div>
       </div>
 
+      <!-- 右パネル：投票結果 -->
       <div class="results-panel">
-        <div class="results-title">📊 得票ランキング</div>
 
+        <div class="section-title">&#x1F4CA; 得票ランキング</div>
         <div id="rankingContainer"></div>
 
         <div class="bar-chart" id="barChartContainer"></div>
@@ -440,18 +765,21 @@
 
         <div id="townRank" class="town-rank rank-f">町ランク: F</div>
 
-        <div id="worldLineDisplay" style="margin-top:10px;padding:8px;background:#f0f0f0;border-radius:8px;text-align:center;font-size:0.9em;color:#667eea;font-weight:bold;">第1世界線</div>
+        <div id="worldLineDisplay" class="world-line-display">第1世界線</div>
 
         <div class="connection-status">
           <span class="status-dot connected" id="statusDot"></span>
           <span id="statusText">接続中</span>
         </div>
+
       </div>
     </div>
   </div>
 
   <script>
-    // Firebase Configuration
+    // ============================================
+    // Firebase 設定
+    // ============================================
     const firebaseConfig = {
       apiKey: "AIzaSyCitq3ZmZ2lbF_mPSermXvbEE77X0jJW2o",
       authDomain: "meisui-world.firebaseapp.com",
@@ -462,35 +790,42 @@
       databaseURL: "https://meisui-world-default-rtdb.firebaseio.com"
     };
 
-    // Initialize Firebase
+    // Firebase 初期化
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Character data
-    const characters = [
-      { key: 'meisui', name: 'イチョウめいすいくん', icon: '🌳', color: '#ffd700' },
-      { key: 'tsutsuji', name: 'ツツジめいちゃん', icon: '🌺', color: '#e040fb' },
-      { key: 'meisui_chan', name: 'ビーナスめいちゃん', icon: '🏖️', color: '#ff6b6b' },
-      { key: 'bekabune', name: '浦安の海めいすいくん', icon: '🐬', color: '#42a5f5' },
-      { key: 'asari', name: '屋形船めいすいくん', icon: '🏮', color: '#ff8a65' },
-      { key: 'ryoushi', name: '漁師めいすいくん', icon: '🐟', color: '#66bb6a' }
+    // ============================================
+    // キャラクターデータ
+    // ============================================
+    const displayChars = [
+      { key: 'meisui', name: 'イチョウめいすいくん', icon: '\u{1F333}', color: '#ffd700' },
+      { key: 'tsutsuji', name: 'ツツジめいちゃん', icon: '\u{1F33A}', color: '#e040fb' },
+      { key: 'meisui_chan', name: 'ビーナスめいちゃん', icon: '\u{1F3D6}\u{FE0F}', color: '#ff6b6b' },
+      { key: 'bekabune', name: '浦安の海めいすいくん', icon: '\u{1F42C}', color: '#42a5f5' },
+      { key: 'asari', name: '屋形船めいすいくん', icon: '\u{1F3EE}', color: '#ff8a65' },
+      { key: 'ryoushi', name: '漁師めいすいくん', icon: '\u{1F41F}', color: '#66bb6a' }
     ];
 
     let voteData = {};
     let isOnline = false;
 
-    // Initialize vote data
+    // ============================================
+    // 投票データ初期化
+    // ============================================
     function initializeVotes() {
-      characters.forEach(char => {
+      displayChars.forEach(char => {
         voteData[char.key] = 0;
       });
     }
 
-    // Create character world with floating icons
+    // ============================================
+    // キャラクターワールド描画（左パネル）
+    // ============================================
     function renderCharacterWorld() {
       const worldDiv = document.getElementById('characterWorld');
       worldDiv.innerHTML = '';
 
+      // キャラクター配置座標
       const positions = [
         { top: '20%', left: '15%' },
         { top: '30%', left: '70%' },
@@ -500,22 +835,51 @@
         { top: '40%', left: '50%' }
       ];
 
-      characters.forEach((char, index) => {
+      displayChars.forEach((char, index) => {
         const iconDiv = document.createElement('div');
         iconDiv.className = 'character-icon';
-        iconDiv.textContent = char.icon;
         iconDiv.id = `char-${char.key}`;
         iconDiv.style.top = positions[index].top;
         iconDiv.style.left = positions[index].left;
-        iconDiv.style.animationDelay = `${index * 0.3}s`;
+        iconDiv.style.animationDelay = `${index * 0.5}s`;
+
+        // キャラクター画像（config.jsから取得）
+        const imgData = typeof charImages !== 'undefined' && charImages[char.key];
+        if (imgData && imgData.src) {
+          const img = document.createElement('img');
+          img.className = 'char-img';
+          img.src = imgData.src;
+          img.alt = char.name;
+          iconDiv.appendChild(img);
+        } else {
+          // フォールバック: 絵文字
+          const emojiSpan = document.createTextNode(char.icon);
+          iconDiv.appendChild(emojiSpan);
+          iconDiv.style.fontSize = '5em';
+        }
+
+        // グローエフェクト（キャラカラー）
+        const glow = document.createElement('div');
+        glow.className = 'char-glow';
+        glow.style.background = char.color;
+        glow.style.animationDelay = `${index * 0.7}s`;
+        iconDiv.appendChild(glow);
+
+        // キャラ名ラベル
+        const label = document.createElement('div');
+        label.className = 'char-label';
+        label.textContent = char.name;
+        iconDiv.appendChild(label);
 
         worldDiv.appendChild(iconDiv);
       });
     }
 
-    // Render ranking list
+    // ============================================
+    // ランキング描画
+    // ============================================
     function renderRanking(data) {
-      const sorted = characters
+      const sorted = displayChars
         .map(char => ({
           ...char,
           votes: data[char.key] || 0
@@ -525,15 +889,23 @@
       const container = document.getElementById('rankingContainer');
       container.innerHTML = '';
 
-      const medals = ['👑', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣'];
+      const medals = ['\u{1F451}', '\u{1F948}', '\u{1F949}', '4\u{FE0F}\u{20E3}', '5\u{FE0F}\u{20E3}', '6\u{FE0F}\u{20E3}'];
 
       sorted.forEach((item, index) => {
         const rankDiv = document.createElement('div');
         rankDiv.className = 'ranking-item';
         rankDiv.id = `rank-${item.key}`;
+
+        // キャラ画像サムネイル（config.jsから取得）
+        const imgData = typeof charImages !== 'undefined' && charImages[item.key];
+        const thumbHtml = imgData && imgData.src
+          ? `<img class="rank-thumb" src="${imgData.src}" alt="${item.name}">`
+          : '';
+
         rankDiv.innerHTML = `
           <div class="ranking-left">
             <div class="rank-medal">${medals[index]}</div>
+            ${thumbHtml}
             <div class="rank-name">${item.name}</div>
           </div>
           <div class="rank-count">${item.votes}</div>
@@ -543,9 +915,11 @@
       });
     }
 
-    // Render bar chart
+    // ============================================
+    // 棒グラフ描画
+    // ============================================
     function renderBarChart(data) {
-      const sorted = characters
+      const sorted = displayChars
         .map(char => ({
           ...char,
           votes: data[char.key] || 0
@@ -564,7 +938,7 @@
         barDiv.innerHTML = `
           <div class="bar-label">
             <span>${item.name}</span>
-            <span>${percentage}%</span>
+            <span class="bar-label-percent">${percentage}%</span>
           </div>
           <div class="bar">
             <div class="bar-fill ${item.key}" style="width: ${percentage}%">
@@ -577,7 +951,9 @@
       });
     }
 
-    // Calculate town rank
+    // ============================================
+    // 町ランク計算
+    // ============================================
     function calculateTownRank(totalVotes) {
       const totalPopulation = 171322;
       const maxVotes = 17;
@@ -597,7 +973,9 @@
       return { rank, className, turnoutPercent };
     }
 
-    // Update statistics
+    // ============================================
+    // 統計情報更新
+    // ============================================
     function updateStats(data) {
       const totalVotes = Object.values(data).reduce((sum, v) => sum + v, 0);
       const { rank, className, turnoutPercent } = calculateTownRank(totalVotes);
@@ -610,7 +988,9 @@
       rankDiv.textContent = `町ランク: ${rank}`;
     }
 
-    // Listen to world line offset
+    // ============================================
+    // 世界線オフセット監視
+    // ============================================
     function listenToWorldLine() {
       database.ref('worldLineOffset').on('value', snapshot => {
         const offset = snapshot.val() || 0;
@@ -619,12 +999,14 @@
       });
     }
 
-    // Listen to votes
+    // ============================================
+    // 投票リアルタイム監視
+    // ============================================
     function listenToVotes() {
       database.ref('votes').on('value', snapshot => {
         const data = snapshot.val() || {};
 
-        characters.forEach(char => {
+        displayChars.forEach(char => {
           voteData[char.key] = data[char.key] || 0;
         });
 
@@ -632,7 +1014,7 @@
         renderBarChart(voteData);
         updateStats(voteData);
 
-        // Flash animation on update
+        // 投票フラッシュアニメーション
         Object.keys(data).forEach(key => {
           const rankItem = document.getElementById(`rank-${key}`);
           if (rankItem) {
@@ -643,7 +1025,9 @@
       });
     }
 
-    // Connection listener
+    // ============================================
+    // 接続状態リスナー
+    // ============================================
     function setupConnectionListener() {
       database.ref('.info/connected').on('value', snapshot => {
         isOnline = snapshot.val();
@@ -651,21 +1035,23 @@
       });
     }
 
-    // Update connection status
+    // 接続状態UI更新
     function updateConnectionStatus() {
       const statusDot = document.getElementById('statusDot');
       const statusText = document.getElementById('statusText');
 
       if (isOnline) {
         statusDot.className = 'status-dot connected';
-        statusText.textContent = '接続中 ✓';
+        statusText.textContent = '接続中 \u2713';
       } else {
         statusDot.className = 'status-dot disconnected';
         statusText.textContent = '接続待機中...';
       }
     }
 
-    // Create blossoms (capped to prevent DOM bloat on long-running displays)
+    // ============================================
+    // 桜の花びら生成（DOMの肥大化を防止）
+    // ============================================
     const MAX_BLOSSOMS = 20;
     function createBlossom() {
       const bg = document.getElementById('bgAnimation');
@@ -673,23 +1059,26 @@
 
       const blossom = document.createElement('div');
       blossom.className = 'particle blossom';
-      blossom.textContent = '🌸';
+      blossom.textContent = '\u{1F338}';
       blossom.style.left = Math.random() * 100 + '%';
       blossom.style.fontSize = (Math.random() * 1.5 + 1) + 'em';
-      blossom.style.opacity = Math.random() * 0.7 + 0.3;
-      blossom.style.animationDuration = (Math.random() * 5 + 8) + 's';
+      blossom.style.opacity = Math.random() * 0.6 + 0.3;
+      blossom.style.animationDuration = (Math.random() * 6 + 10) + 's';
 
       bg.appendChild(blossom);
 
-      setTimeout(() => blossom.remove(), 13000);
+      // 一定時間後に削除
+      setTimeout(() => blossom.remove(), 16000);
     }
 
-    // Spawn blossoms periodically
+    // 桜を定期的に生成
     function setupBlossoms() {
       setInterval(createBlossom, 800);
     }
 
-    // Fullscreen button
+    // ============================================
+    // フルスクリーンボタン
+    // ============================================
     function setupFullscreenButton() {
       document.getElementById('fullscreenBtn').addEventListener('click', () => {
         const elem = document.documentElement;
@@ -703,7 +1092,9 @@
       });
     }
 
-    // Initialize on load
+    // ============================================
+    // 初期化
+    // ============================================
     window.addEventListener('load', () => {
       initializeVotes();
       renderCharacterWorld();

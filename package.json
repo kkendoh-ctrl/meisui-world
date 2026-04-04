@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@chenglou/pretext": "^0.0.4",
+    "docx": "^9.6.1"
+  }
+}

@@ -254,7 +254,7 @@ function showReclamationEvolution(stageInfo) {
                 position:fixed;top:50%;left:50%;width:200px;height:200px;
                 border:8px solid rgba(100,200,255,0.8);border-radius:50%;
                 z-index:451;pointer-events:none;
-                animation:evolutionRing 1.5s ease-out forwards;
+                animation:evolutionRing 1.5s var(--ease-spring) forwards;
             `;
             document.body.appendChild(ring);
             setTimeout(() => ring.remove(), 1500);
@@ -268,7 +268,7 @@ function showReclamationEvolution(stageInfo) {
         font-size:64px;font-weight:900;color:white;
         text-shadow:0 0 20px rgba(100,200,255,1), 0 0 40px rgba(100,200,255,0.5);
         font-family:sans-serif;
-        animation:evolutionGrow 1.5s ease forwards;
+        animation:evolutionGrow 1.5s var(--ease-spring-bouncy) forwards;
     `;
     growText.textContent = '🌳 ぐんぐん！';
     document.body.appendChild(growText);
@@ -286,7 +286,7 @@ function showReclamationEvolution(stageInfo) {
             text-align:center;font-family:sans-serif;
             border:4px solid #64b5f6;
             box-shadow:0 10px 40px rgba(0,100,255,0.5);
-            animation:evolutionPopText 0.6s ease forwards;
+            animation:evolutionPopText 0.6s var(--ease-spring-bouncy) forwards;
         `;
         popup.innerHTML = `
             <div style="font-size:48px;margin-bottom:10px;">🏗️</div>
@@ -334,7 +334,7 @@ function showNewLandGlow() {
                 position:fixed;left:${x}px;top:${y}px;z-index:301;
                 pointer-events:none;font-size:${16 + Math.random() * 20}px;
                 color:gold;text-shadow:0 0 10px gold;
-                animation:cutinSparkle 1.2s ease-in-out forwards;
+                animation:cutinSparkle 1.2s var(--ease-spring) forwards;
             `;
             sparkle.textContent = ['✦', '✧', '⭐', '💎'][Math.floor(Math.random() * 4)];
             document.body.appendChild(sparkle);

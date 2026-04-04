@@ -1,0 +1,234 @@
+/* ============================================
+   めいすいくん総選挙 v2 デザインシステム
+   ============================================ */
+
+:root {
+  /* ── キャラクターカラー ── */
+  --color-meisui: #FFD700;
+  --color-meisui-light: #FFF3B0;
+  --color-tsutsuji: #E040FB;
+  --color-tsutsuji-light: #F3B0FF;
+  --color-meisui-chan: #FF6B6B;
+  --color-meisui-chan-light: #FFB3B3;
+  --color-bekabune: #42A5F5;
+  --color-bekabune-light: #B3D9FF;
+  --color-asari: #FF8A65;
+  --color-asari-light: #FFCDB8;
+  --color-ryoushi: #66BB6A;
+  --color-ryoushi-light: #B8E6BA;
+
+  /* ── UIカラー ── */
+  --color-bg: #F8F6F1;
+  --color-bg-warm: #FFF9F0;
+  --color-bg-dark: #1A1A2E;
+  --color-surface: #FFFFFF;
+  --color-surface-glass: rgba(255, 255, 255, 0.72);
+  --color-text: #1A1A2E;
+  --color-text-muted: #6B7280;
+  --color-text-light: rgba(255, 255, 255, 0.92);
+  --color-border: #E5E1D8;
+  --color-accent: #C41E3A;
+  --color-accent-light: rgba(196, 30, 58, 0.08);
+  --color-success: #10B981;
+  --color-primary: #6366F1;
+  --color-primary-light: #A5B4FC;
+
+  /* ── タイポグラフィ ── */
+  --font-sans: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+  --font-serif: 'Noto Serif JP', 'Hiragino Mincho ProN', serif;
+  --font-display: 'Noto Sans JP', sans-serif;
+
+  --text-xs: clamp(0.65rem, 1.2vw, 0.75rem);
+  --text-sm: clamp(0.8rem, 1.5vw, 0.875rem);
+  --text-base: clamp(0.9rem, 1.8vw, 1rem);
+  --text-lg: clamp(1.05rem, 2.2vw, 1.125rem);
+  --text-xl: clamp(1.15rem, 2.5vw, 1.25rem);
+  --text-2xl: clamp(1.4rem, 3vw, 1.5rem);
+  --text-3xl: clamp(1.7rem, 4vw, 1.875rem);
+  --text-4xl: clamp(2rem, 5vw, 2.25rem);
+  --text-5xl: clamp(2.6rem, 6vw, 3rem);
+
+  /* ── スペーシング ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── 角丸 ── */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* ── シャドウ ── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3);
+  --shadow-card-hover: 0 16px 40px rgba(0, 0, 0, 0.12), 0 6px 12px rgba(0, 0, 0, 0.06);
+
+  /* ── アニメーション ── */
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /*
+   * スプリングアニメーション（バネの動き）
+   * 参考: https://ics.media/entry/260402/
+   * CSS linear() でリアルなバネ挙動を実現
+   */
+
+  /* 標準スプリング — ボタン、カード選択、UI遷移に使用 */
+  --ease-spring: linear(
+    0, 0.0107, 0.0398, 0.0834, 0.138, 0.2003, 0.2677, 0.3379,
+    0.4089, 0.4791, 0.5471, 0.612, 0.6731, 0.7297, 0.7815,
+    0.8283, 0.87, 0.9068, 0.9388, 0.9662, 0.9892, 1.0083,
+    1.0237, 1.0357, 1.0449, 1.0514, 1.0556, 1.058, 1.0587,
+    1.0581, 1.0563, 1.0538, 1.0506, 1.0469, 1.043, 1.0388,
+    1.0347, 1.0306, 1.0266, 1.0228, 1.0192, 1.0159, 1.0128,
+    1.0101, 1.0076, 1.0055, 1.0036, 1.002, 1.0006, 0.9995,
+    0.9986, 0.9979, 0.9974, 0.997, 0.9967, 0.9966, 0.9966,
+    0.9966, 0.9967, 0.9968, 0.997, 0.9972, 0.9975, 0.9977,
+    0.998, 0.9982, 0.9984, 0.9987, 0.9989, 0.9991, 0.9992,
+    0.9994, 0.9996, 0.9997, 0.9998, 0.9999, 1, 1, 1.0001,
+    1.0001, 1.0002, 1.0002, 1.0002, 1.0002, 1.0002, 1.0002,
+    1.0002, 1.0002, 1.0002, 1.0002, 1.0001, 1.0001, 1.0001,
+    1.0001, 1.0001, 1.0001, 1.0001, 1.0001, 1, 1, 1
+  );
+
+  /* 弾みの強いスプリング — カットイン演出、投票箱、キャラ出現に使用 */
+  --ease-spring-bouncy: linear(
+    0, 0.004, 0.016, 0.035, 0.063, 0.098, 0.141, 0.191, 0.25,
+    0.316, 0.389, 0.468, 0.553, 0.642, 0.735, 0.831, 0.929,
+    1.027, 1.124, 1.158, 1.182, 1.195, 1.199, 1.193, 1.179,
+    1.157, 1.128, 1.093, 1.054, 1.012, 0.968, 0.936, 0.918,
+    0.908, 0.907, 0.914, 0.928, 0.946, 0.969, 0.993, 1.009,
+    1.02, 1.024, 1.024, 1.02, 1.012, 1.003, 0.995, 0.99,
+    0.988, 0.989, 0.992, 0.996, 1, 1.002, 1.003, 1.002, 1.001,
+    1, 0.999, 0.999, 0.999, 1, 1, 1
+  );
+
+  /* 軽めのスプリング — トースト通知、ツールチップ、軽いフィードバックに使用 */
+  --ease-spring-gentle: linear(
+    0, 0.05, 0.13, 0.24, 0.36, 0.49, 0.62, 0.74, 0.84,
+    0.92, 0.97, 1.01, 1.03, 1.04, 1.03, 1.02, 1.01, 1.005,
+    1.001, 1, 1, 1
+  );
+
+  /* スプリング用デュレーション */
+  --spring-duration: 0.6s;
+  --spring-duration-fast: 0.4s;
+  --spring-duration-slow: 1s;
+
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+
+  /* ── グラス効果 ── */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-blur: blur(16px);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* ── リセット ── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img { display: block; max-width: 100%; }
+button { cursor: pointer; font-family: inherit; }
+
+/* ── ユーティリティクラス ── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-dark {
+  background: rgba(26, 26, 46, 0.72);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ── 共通アニメーション ── */
+@keyframes v2-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes v2-fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes v2-fadeInScale {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes v2-slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes v2-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes v2-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.03); opacity: 1; }
+}
+
+@keyframes v2-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes v2-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes v2-ripple {
+  0% { transform: scale(0); opacity: 0.6; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+@keyframes v2-confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes v2-count-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes v2-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

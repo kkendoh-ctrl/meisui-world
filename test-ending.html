@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>エンディングテスト</title>
+<script src="js/config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    width: 100%; height: 100vh; overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+    position: relative;
+}
+
+/* MAP風背景 */
+.map-bg {
+    position: fixed; inset: 0;
+    background: url('urayasu_map.webp') center/cover no-repeat;
+}
+.map-overlay {
+    position: fixed; inset: 0;
+    background: linear-gradient(180deg, rgba(200,230,245,0.3) 0%, rgba(224,246,255,0.3) 100%);
+}
+
+/* タイトルバー */
+.title-bar {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 40px;
+    background: rgba(20, 60, 100, 0.6);
+    backdrop-filter: blur(5px);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: bold;
+    z-index: 5;
+}
+
+/* 年代 */
+.era {
+    position: fixed; top: 40px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 22px; font-weight: 900;
+    color: #ffd700;
+    text-shadow: 0 0 12px rgba(255,215,0,0.6), 0 2px 4px rgba(0,0,0,0.8);
+    z-index: 5;
+    padding: 2px 16px;
+    background: rgba(20,60,100,0.35);
+    backdrop-filter: blur(5px);
+    border-radius: 0 0 12px 12px;
+}
+
+/* キャラクター */
+.chars {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    display: flex; gap: 16px; flex-wrap: wrap;
+    justify-content: center; align-items: flex-end;
+    max-width: 800px;
+}
+.char-item {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+.char-item:hover { transform: scale(1.05); }
+.char-item img {
+    width: 100px; height: 100px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+    animation: float 3s ease-in-out infinite;
+}
+.char-item:nth-child(2) img { animation-delay: 0.5s; }
+.char-item:nth-child(3) img { animation-delay: 1s; }
+.char-item:nth-child(4) img { animation-delay: 1.5s; }
+.char-item:nth-child(5) img { animation-delay: 2s; }
+.char-item:nth-child(6) img { animation-delay: 2.5s; }
+.char-name {
+    font-size: 11px; font-weight: bold; color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+/* 指示テキスト */
+.instruction {
+    position: fixed; bottom: 80px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    color: #fff;
+    font-size: 18px; font-weight: bold;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+    text-align: center;
+    animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* 投票フラッシュ */
+.vote-flash {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(255,255,255,0.8);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+}
+.vote-flash.active { opacity: 1; }
+
+/* 暗転 */
+.black-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: #1a120a;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 2s ease-in;
+}
+.black-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* タイムラインバー */
+.timeline {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 34px;
+    background: rgba(0,0,0,0.5);
+    z-index: 5;
+    display: flex; align-items: center;
+    padding: 0 16px;
+    font-size: 12px; color: #ffd700;
+    font-weight: bold;
+}
+.timeline-bar {
+    flex: 1; height: 6px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+    margin: 0 12px;
+    overflow: hidden;
+}
+.timeline-fill {
+    height: 100%; width: 100%;
+    background: #ffd700;
+    border-radius: 3px;
+}
+</style>
+</head>
+<body>
+
+<div class="map-bg"></div>
+<div class="map-overlay"></div>
+
+<div class="title-bar">🗳️ 浦安ご当地めいすいくん人気投票選挙</div>
+<div class="era">2100年</div>
+
+<div class="chars" id="chars"></div>
+
+<div class="instruction">好きなキャラクターをタップして<br>エンディングへ！</div>
+
+<div class="vote-flash" id="flash"></div>
+<div class="black-overlay" id="overlay"></div>
+
+<div class="timeline">
+    <span>1889</span>
+    <div class="timeline-bar"><div class="timeline-fill"></div></div>
+    <span>2100</span>
+</div>
+
+<script>
+// Firebase初期化
+firebase.initializeApp({
+    apiKey: "AIzaSyCitq3ZmZ2lbF_mPSermXvbEE77X0jJW2o",
+    authDomain: "meisui-world.firebaseapp.com",
+    databaseURL: "https://meisui-world-default-rtdb.firebaseio.com",
+    projectId: "meisui-world",
+    storageBucket: "meisui-world.firebasestorage.app",
+    messagingSenderId: "966808863030",
+    appId: "1:966808863030:web:a1b85eb17974162c673397"
+});
+const db = firebase.database();
+
+// キャラ表示
+const container = document.getElementById('chars');
+const shortNames = {
+    meisui: 'イチョウめいすいくん',
+    tsutsuji: 'ツツジめいちゃん',
+    meisui_chan: 'ビーナスめいちゃん',
+    bekabune: '浦安の海めいすいくん',
+    asari: '屋形船めいすいくん',
+    ryoushi: '漁師めいすいくん',
+};
+
+const keys = typeof CHAR_TYPES !== 'undefined' ? CHAR_TYPES : Object.keys(shortNames);
+keys.forEach(key => {
+    if (charImages && charImages[key] && charImages[key].src) {
+        const item = document.createElement('div');
+        item.className = 'char-item';
+
+        const img = document.createElement('img');
+        img.src = charImages[key].src;
+        img.alt = shortNames[key] || key;
+        item.appendChild(img);
+
+        const name = document.createElement('div');
+        name.className = 'char-name';
+        name.textContent = shortNames[key] || key;
+        item.appendChild(name);
+
+        // タップで投票→ED遷移
+        item.addEventListener('click', () => vote(key));
+        container.appendChild(item);
+    }
+});
+
+let voted = false;
+function vote(charType) {
+    if (voted) return;
+    voted = true;
+
+    // 実際にFirebaseに1票入れる
+    const voteRef = db.ref('votes/' + charType);
+    voteRef.transaction(current => (current || 0) + 1);
+
+    // フラッシュ演出
+    const flash = document.getElementById('flash');
+    flash.classList.add('active');
+    setTimeout(() => flash.classList.remove('active'), 300);
+
+    // 1.5秒後に暗転→ED遷移
+    setTimeout(() => {
+        const overlay = document.getElementById('overlay');
+        overlay.classList.add('active');
+
+        setTimeout(() => {
+            window.location.href = 'ending-secret.html';
+        }, 2500);
+    }, 800);
+}
+</script>
+</body>
+</html>

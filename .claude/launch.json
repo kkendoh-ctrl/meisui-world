@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "meisui-world",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8080", "--directory", "C:/Users/monum/Documents/meisui-world"],
-      "port": 8080
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "C:/Users/monum/Documents/meisui-world"],
+      "port": 8765
     }
   ]
 }
